@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:voxylive/screens/auth/verification_screen.dart';
-import 'package:voxylive/services/api.dart';
+import 'verification_screen.dart';
 
 class EmailScreen extends StatelessWidget {
   const EmailScreen({super.key});
@@ -16,15 +14,16 @@ class EmailScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFFE98834)),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           "Get Started",
-          style: const TextStyle(fontFamily: "Inter", color: Colors.white, fontSize: 16),
+          style: TextStyle(
+            fontFamily: "Inter",
+            color: Colors.white,
+            fontSize: 16,
+          ),
         ),
-        centerTitle: false,
       ),
 
       body: Padding(
@@ -32,10 +31,9 @@ class EmailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// 🔥 Title
-            Text(
+            const Text(
               "Starting with Email",
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: "MuseoModerno",
                 fontSize: 26,
                 fontWeight: FontWeight.w500,
@@ -45,27 +43,23 @@ class EmailScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            /// ✉️ Subtitle (NEW)
-            Text(
+            const Text(
               "Enter your Email to continue",
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: "Inter",
-                fontSize: 14, 
-                color: Colors.grey),
+                fontSize: 14,
+                color: Colors.grey,
+              ),
             ),
 
             const SizedBox(height: 30),
 
-            /// 📩 Input Field
+            /// Input (no controller)
             TextField(
-              style: const TextStyle(
-                fontFamily: "Inter",
-                color: Colors.white),
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "aishwary@example.com",
-                hintStyle: const TextStyle(
-                  fontFamily: "Inter",
-                  color: Colors.grey),
+                hintStyle: const TextStyle(color: Colors.grey),
                 filled: true,
                 fillColor: const Color(0xFF1A1B18),
                 contentPadding: const EdgeInsets.symmetric(
@@ -81,7 +75,7 @@ class EmailScreen extends StatelessWidget {
 
             const Spacer(),
 
-            /// 🔘 Button
+            /// Button (simple navigation)
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -92,19 +86,17 @@ class EmailScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () async {
-                  await Api.emailAuth(emailController.text);
-
+                onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => VerificationScreen(email: emailController.text),
+                      builder: (_) => const VerificationScreen(),
                     ),
                   );
                 },
-                child: Text(
+                child: const Text(
                   "Continue",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: "Inter",
                     fontWeight: FontWeight.w600,
                     fontSize: 16,

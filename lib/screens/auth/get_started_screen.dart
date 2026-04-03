@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'email_screen.dart';
 
 class GetStartedScreen extends StatelessWidget {
@@ -20,7 +19,7 @@ class GetStartedScreen extends StatelessWidget {
             ),
           ),
 
-          /// 🔥 Dark overlay (for text visibility)
+          /// 🔥 Dark overlay
           Container(color: Colors.black.withOpacity(0.4)),
 
           /// 🔥 Content
@@ -33,11 +32,11 @@ class GetStartedScreen extends StatelessWidget {
 
                 /// 🔥 Main Text
                 RichText(
-                  text: TextSpan(
+                  text: const TextSpan(
                     children: [
                       TextSpan(
                         text: "Where world\n",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: "MuseoModerno",
                           fontSize: 32,
                           height: 1.8,
@@ -47,7 +46,7 @@ class GetStartedScreen extends StatelessWidget {
                       ),
                       TextSpan(
                         text: "feels ",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: "MuseoModerno",
                           fontSize: 54,
                           height: 1,
@@ -57,7 +56,7 @@ class GetStartedScreen extends StatelessWidget {
                       ),
                       TextSpan(
                         text: "Alive",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: "MuseoModerno",
                           fontSize: 54,
                           fontWeight: FontWeight.w600,
@@ -70,7 +69,7 @@ class GetStartedScreen extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                /// 🔥 Button Row
+                /// 🔥 Buttons Row
                 Row(
                   children: [
                     /// Get Started Button
@@ -94,18 +93,17 @@ class GetStartedScreen extends StatelessWidget {
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
+                            children: const [
                               Text(
                                 "Get Started",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Icon(
+                              Icon(
                                 Icons.arrow_forward,
                                 color: Colors.black,
                                 size: 26,
@@ -118,12 +116,12 @@ class GetStartedScreen extends StatelessWidget {
 
                     const SizedBox(width: 12),
 
-                    /// Google Button (circle)
+                    /// Google Button (NO FUNCTIONALITY)
                     Container(
                       height: 55,
                       width: 55,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD2AB),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFD2AB),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -139,7 +137,7 @@ class GetStartedScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                /// 🔥 Bottom Text (NO navigation)
+                /// 🔥 Bottom Text
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -147,9 +145,7 @@ class GetStartedScreen extends StatelessWidget {
                       height: 14,
                       width: 14,
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFE98834,
-                        ).withOpacity(0.2), // 🔥 outer light bg
+                        color: const Color(0xFFE98834).withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -157,53 +153,20 @@ class GetStartedScreen extends StatelessWidget {
                           height: 6,
                           width: 6,
                           decoration: const BoxDecoration(
-                            color: Color(0xFFE98834), // 🔥 inner solid dot
+                            color: Color(0xFFE98834),
                             shape: BoxShape.circle,
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontFamily: "Inter",
-                            fontSize: 11,
-                            color: Color(0xFF815F42),
-                          ),
-                          children: [
-                            const TextSpan(
-                              text:
-                                  "Proceeding from this screen confirms that you accept our ",
-                            ),
-                            TextSpan(
-                              text: "Privacy Policy",
-                              style: const TextStyle(
-                                fontFamily: "Inter",
-                                color: Color(0xFFE98834),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const TextSpan(text: ", "),
-                            TextSpan(
-                              text: "Terms & Conditions",
-                              style: const TextStyle(
-                                fontFamily: "Inter",
-                                color: Color(0xFFE98834),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const TextSpan(text: " and "),
-                            TextSpan(
-                              text: "Terms of Use",
-                              style: const TextStyle(
-                                fontFamily: "Inter",
-                                color: Color(0xFFE98834),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                    const Expanded(
+                      child: Text(
+                        "Proceeding from this screen confirms that you accept our Privacy Policy, Terms & Conditions and Terms of Use",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 11,
+                          color: Color(0xFF815F42),
                         ),
                       ),
                     ),
