@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
+import '../../utils/loader.dart';
 import 'verification_screen.dart';
 
-class EmailScreen extends StatelessWidget {
+class EmailScreen extends StatefulWidget {
   const EmailScreen({super.key});
+
+  @override
+  State<EmailScreen> createState() => _EmailScreenState();
+}
+
+class _EmailScreenState extends State<EmailScreen> {
+  final TextEditingController emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +65,8 @@ class EmailScreen extends StatelessWidget {
 
             /// Input (no controller)
             TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: "aishwary@example.com",
@@ -86,13 +97,36 @@ class EmailScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const VerificationScreen(),
-                    ),
-                  );
+                onPressed: () async {
+                  final email = emailController.text.trim();
+
+                  if (email.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Enter email")),
+                    );
+                    return;
+                  }
+
+                  try {
+                    Loader.show(context);
+
+                    await AuthService.emailAuth(email);
+
+                    Loader.hide(context);
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VerificationScreen(email: email),
+                      ),
+                    );
+                  } catch (e) {
+                    Loader.hide(context);
+
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
                 },
                 child: const Text(
                   "Continue",
@@ -109,5 +143,11 @@ class EmailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
   }
 }

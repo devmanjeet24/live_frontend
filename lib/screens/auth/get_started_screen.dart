@@ -1,8 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../../services/auth_service.dart';
+import '../../utils/loader.dart';
+import 'package:voxylive/screens/home/dashboard.dart';
 import 'email_screen.dart';
 
-class GetStartedScreen extends StatelessWidget {
+class GetStartedScreen extends StatefulWidget {
   const GetStartedScreen({super.key});
+
+  @override
+  State<GetStartedScreen> createState() => _GetStartedScreenState();
+}
+
+class _GetStartedScreenState extends State<GetStartedScreen> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  scopes: ['email'],
+  serverClientId: "393696498788-41o437evh8iggi8rk8boshbqn0vt78h3.apps.googleusercontent.com",
+);
+
+  // const GetStartedScreen({super.key});
+
+  Future<void> _handleGoogle(BuildContext context) async {
+    try {
+      Loader.show(context);
+
+      final account = await _googleSignIn.signIn();
+
+      if (account == null) {
+        Loader.hide(context);
+        return;
+      }
+
+      final auth = await account.authentication;
+
+      print("ID TOKEN: ${auth.idToken}");
+
+      if (auth.idToken == null) {
+        Loader.hide(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Google login failed (idToken null)")),
+        );
+
+        return;
+      }
+
+      await AuthService.googleAuth(auth.idToken!);
+
+      Loader.hide(context);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } catch (e) {
+      Loader.hide(context);
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,18 +172,21 @@ class GetStartedScreen extends StatelessWidget {
                     const SizedBox(width: 12),
 
                     /// Google Button (NO FUNCTIONALITY)
-                    Container(
-                      height: 55,
-                      width: 55,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFFD2AB),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Image.asset(
-                          "assets/images/Google.png",
-                          height: 24,
-                          width: 24,
+                    GestureDetector(
+                      onTap: () => _handleGoogle(context),
+                      child: Container(
+                        height: 55,
+                        width: 55,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFD2AB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Image.asset(
+                            "assets/images/Google.png",
+                            height: 24,
+                            width: 24,
+                          ),
                         ),
                       ),
                     ),

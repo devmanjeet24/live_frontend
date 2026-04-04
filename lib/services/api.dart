@@ -1,26 +1,66 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/storage.dart';
 
 class Api {
-  static const baseUrl = "http://10.0.2.2:8000";
+  static const String baseUrl = "http://10.0.2.2:8000/api";
 
-  static Future sendEmail(String email) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/auth/email"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"email": email}),
-    );
+  static Future<Map<String, String>> _headers() async {
+    final token = await Storage.getAccessToken();
 
-    return res;
+    return {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    };
   }
 
-  static Future verifyOtp(String email, String otp) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/auth/verify-otp"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"email": email, "otp": otp}),
+  static Future<dynamic> post(String url, dynamic body) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl$url"),
+      headers: await _headers(),
+      body: jsonEncode(body),
     );
 
-    return res;
+    return _handleResponse(response);
+  }
+
+  static Future<dynamic> putMultipart(
+    String url,
+    Map<String, String> fields,
+    String? filePath,
+  ) async {
+    var request = http.MultipartRequest("PUT", Uri.parse("$baseUrl$url"));
+
+    request.headers.addAll(await _headers());
+    request.fields.addAll(fields);
+
+    if (filePath != null) {
+      request.files.add(await http.MultipartFile.fromPath("avatar", filePath));
+    }
+
+    var res = await request.send();
+    var response = await http.Response.fromStream(res);
+
+    return _handleResponse(response);
+  }
+
+  static dynamic _handleResponse(http.Response response) async {
+    final data = jsonDecode(response.body);
+
+    // if (response.statusCode == 401) {
+    //   // 🔥 auto refresh logic
+    //   final newToken = await _refreshToken();
+
+    //   if (newToken != null) {
+    //     throw Exception("retry"); // frontend retry karega
+    //   }
+    // }
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return data;
+    } else {
+      // throw Exception(data["message"] ?? "Error");
+      throw Exception(data["message"] ?? data["error"] ?? "Something went wrong");
+    }
   }
 }

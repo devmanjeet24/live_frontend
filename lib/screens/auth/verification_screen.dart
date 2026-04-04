@@ -1,38 +1,98 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
+import '../../utils/loader.dart';
 import 'dob_screen.dart';
+import 'dart:async';
 
 class VerificationScreen extends StatefulWidget {
-  const VerificationScreen({super.key});
-
+  final String email;
+  const VerificationScreen({super.key, required this.email});
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  /// OTP controllers
-  final List<TextEditingController> controllers =
-      List.generate(4, (_) => TextEditingController());
+  int seconds = 30;
+  bool canResend = false;
+  bool isLoading = false;
+  Timer? timer;
 
-  final List<FocusNode> focusNodes =
-      List.generate(4, (_) => FocusNode());
+  /// OTP controllers
+  final List<TextEditingController> controllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+
+  final List<FocusNode> focusNodes = List.generate(4, (_) => FocusNode());
+
+  void startTimer() {
+    seconds = 30;
+    canResend = false;
+
+    timer?.cancel();
+
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (seconds == 0) {
+        t.cancel();
+        setState(() => canResend = true);
+      } else {
+        setState(() => seconds--);
+      }
+    });
+  }
 
   /// 🔥 OTP Complete (UI only)
-  void _onOtpComplete() {
+  void _onOtpComplete() async {
     String otp = controllers.map((e) => e.text).join();
 
     if (otp.length == 4) {
-      Navigator.pushReplacement(
+      try {
+        Loader.show(context);
+
+        await AuthService.verifyOtp(widget.email, otp);
+
+        Loader.hide(context);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DobScreen()),
+        );
+      } catch (e) {
+        Loader.hide(context);
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
+      }
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    try {
+      Loader.show(context);
+
+      await AuthService.resendOtp(widget.email);
+
+      Loader.hide(context);
+
+      startTimer();
+
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(
-          builder: (_) => const DobScreen(),
-        ),
-      );
+      ).showSnackBar(const SnackBar(content: Text("OTP sent again")));
+    } catch (e) {
+      Loader.hide(context);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
   @override
   void initState() {
     super.initState();
+    startTimer();
 
     /// auto focus first box
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -81,8 +141,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
             const SizedBox(height: 8),
 
             /// 🔥 Subtitle
-            const Text(
-              "We sent a verification code to\n“aishwary@example.com”.",
+            Text(
+              "We sent a verification code to\n\"${widget.email}\".",
               style: TextStyle(
                 fontFamily: "Inter",
                 fontSize: 14,
@@ -108,8 +168,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.info_outline,
-                      color: Color(0xFFE98834), size: 18),
+                  Icon(Icons.info_outline, color: Color(0xFFE98834), size: 18),
                   SizedBox(width: 8),
                   Text(
                     "Just in case check your Spam Folder.",
@@ -144,8 +203,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
                     maxLength: 1,
-                    style:
-                        const TextStyle(color: Colors.white, fontSize: 22),
+                    style: const TextStyle(color: Colors.white, fontSize: 22),
                     decoration: const InputDecoration(
                       counterText: "",
                       border: InputBorder.none,
@@ -153,14 +211,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     onChanged: (value) {
                       if (value.isNotEmpty) {
                         if (index < 3) {
-                          FocusScope.of(context)
-                              .requestFocus(focusNodes[index + 1]);
+                          FocusScope.of(
+                            context,
+                          ).requestFocus(focusNodes[index + 1]);
                         } else {
                           _onOtpComplete();
                         }
                       } else if (index > 0) {
-                        FocusScope.of(context)
-                            .requestFocus(focusNodes[index - 1]);
+                        FocusScope.of(
+                          context,
+                        ).requestFocus(focusNodes[index - 1]);
                       }
                     },
                   ),
@@ -173,22 +233,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
             /// 🔁 Resend
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text(
-                  "Resend Code",
-                  style: TextStyle(
-                    fontFamily: "Inter",
-                    fontSize: 12,
-                    color: Color(0xFFE98834),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  "in 00:30",
-                  style: TextStyle(
-                    fontFamily: "Inter",
-                    fontSize: 12,
-                    color: Colors.white70,
+              children: [
+                GestureDetector(
+                  onTap: canResend ? _resendOtp : null,
+                  child: Text(
+                    canResend
+                        ? "Resend Code"
+                        : "Resend in 00:${seconds.toString().padLeft(2, '0')}",
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 12,
+                      color: canResend ? const Color(0xFFE98834) : Colors.grey,
+                    ),
                   ),
                 ),
               ],
@@ -231,5 +287,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 }

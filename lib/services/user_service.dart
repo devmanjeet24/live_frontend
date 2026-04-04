@@ -1,0 +1,14 @@
+import '../services/api.dart';
+
+class UserService {
+  static Future<void> updateProfile({
+    required String username,
+    String? imagePath,
+  }) async {
+    await Api.putMultipart(
+      "/user/profile",
+      {"username": username},
+      imagePath,
+    );
+  }
+}
