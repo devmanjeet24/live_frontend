@@ -1,7 +1,8 @@
 // 🔥 UPDATED DOB SCREEN (FIXED GAPS)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../services/auth_service.dart';
+import '../../utils/loader.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:voxylive/screens/auth/edit_profile.dart';
 
@@ -13,6 +14,8 @@ class DobScreen extends StatefulWidget {
 }
 
 class _DobScreenState extends State<DobScreen> {
+  bool isLoading = false;
+
   int selectedTab = 0;
 
   int? selectedDay;
@@ -37,6 +40,54 @@ class _DobScreenState extends State<DobScreen> {
   ];
 
   final List<int> years = List.generate(35, (index) => 1990 + index);
+
+  String _getDob() {
+    if (dobController.text.isNotEmpty) {
+      return dobController.text;
+    }
+
+    if (selectedDay != null && selectedMonth != null && selectedYear != null) {
+      int monthIndex = months.indexOf(selectedMonth!) + 1;
+
+      return "${selectedYear!}-${monthIndex.toString().padLeft(2, '0')}-${selectedDay.toString().padLeft(2, '0')}";
+    }
+
+    return "";
+  }
+
+  Future<void> _submitDob() async {
+    final dob = _getDob();
+
+    if (dob.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please select DOB")));
+      return;
+    }
+
+    try {
+      setState(() => isLoading = true);
+
+      Loader.show(context);
+
+      await AuthService.saveDob(dob);
+
+      Loader.hide(context);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const FinishSetupScreen()),
+      );
+    } catch (e) {
+      Loader.hide(context);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +140,11 @@ class _DobScreenState extends State<DobScreen> {
                   const SizedBox(width: 8),
                   Text(
                     "Don’t worry your Date of birth will be private",
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: "Inter"),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontFamily: "Inter",
+                    ),
                   ),
                 ],
               ),
@@ -99,7 +154,10 @@ class _DobScreenState extends State<DobScreen> {
 
             Text(
               "Add your date of birth.",
-              style: const TextStyle(color: Colors.white70, fontFamily: "Inter"),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontFamily: "Inter",
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -156,7 +214,7 @@ class _DobScreenState extends State<DobScreen> {
                             ? const Color(0xFFE98834)
                             : const Color(0xFF3A2713),
 
-                        foregroundColor: _isValid()
+                        foregroundColor: _isValid() 
                             ? Colors.black
                             : Colors.white38,
 
@@ -165,37 +223,51 @@ class _DobScreenState extends State<DobScreen> {
                         ),
                       ),
                       onPressed: () {
-                        if (!_isValid()) return;
+                        if (!_isValid() || isLoading) return;
 
                         if (dobController.text.isNotEmpty) {
-                          // direct dob enter case
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const FinishSetupScreen(),
-                            ),
-                          );
+                          _submitDob();
                         } else {
                           if (selectedTab < 2) {
                             setState(() => selectedTab++);
                           } else {
-                          
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const FinishSetupScreen(),
-                              ),
-                            );
+                            _submitDob();
                           }
                         }
                       },
-                      child: Text(
-                        "Next",
-                        style: TextStyle(
-                          color: _isValid() ? Colors.black : Colors.white54,
-                          fontFamily: "Inter"
-                        ),
-                      ),
+
+                      // if (dobController.text.isNotEmpty) {
+                      //   // direct dob enter case
+                      //   Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (_) => const FinishSetupScreen(),
+                      //     ),
+                      //   );
+                      // } else {
+                      //   if (selectedTab < 2) {
+                      //     setState(() => selectedTab++);
+                      //   } else {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (_) => const FinishSetupScreen(),
+                      //       ),
+                      //     );
+                      //   }
+                      // }
+                      // },
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                              "Next",
+                              style: TextStyle(
+                                color: _isValid()
+                                    ? Colors.black
+                                    : Colors.white54,
+                                fontFamily: "Inter",
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -226,7 +298,7 @@ class _DobScreenState extends State<DobScreen> {
             color: isSelected
                 ? const Color.fromARGB(255, 246, 245, 245)
                 : Colors.white70,
-                fontFamily: "Inter",
+            fontFamily: "Inter",
           ),
         ),
       ),
@@ -364,7 +436,7 @@ class _DobScreenState extends State<DobScreen> {
           text,
           style: TextStyle(
             color: selected ? Colors.black : Colors.white,
-            fontFamily: "inter"
+            fontFamily: "inter",
           ),
         ),
       ),
