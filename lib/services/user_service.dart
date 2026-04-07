@@ -11,4 +11,11 @@ class UserService {
       imagePath,
     );
   }
+
+
+  static Future<Map<String, dynamic>> getProfile() async {
+    return await Api.get("/user/profile");
+  }
+
 }
+

@@ -3,13 +3,10 @@ import 'package:http/http.dart' as http;
 import '../utils/storage.dart';
 
 class Api {
-  // static const String baseUrl = "http://10.0.2.2:8000/api";
-  static const String baseUrl = "https://voxyliv-backend.onrender.com/api";
-  
+  static const String baseUrl = "http://116.202.210.102:20355/api";
 
   static Future<Map<String, String>> _headers() async {
     final token = await Storage.getAccessToken();
-
     return {
       "Content-Type": "application/json",
       if (token != null) "Authorization": "Bearer $token",
@@ -22,8 +19,15 @@ class Api {
       headers: await _headers(),
       body: jsonEncode(body),
     );
+    return _handleResponse(response, url: url, body: body, method: "POST");
+  }
 
-    return _handleResponse(response);
+  static Future<dynamic> get(String url) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl$url"),
+      headers: await _headers(),
+    );
+    return _handleResponse(response, url: url, method: "GET");
   }
 
   static Future<dynamic> putMultipart(
@@ -32,7 +36,6 @@ class Api {
     String? filePath,
   ) async {
     var request = http.MultipartRequest("PUT", Uri.parse("$baseUrl$url"));
-
     request.headers.addAll(await _headers());
     request.fields.addAll(fields);
 
@@ -42,27 +45,86 @@ class Api {
 
     var res = await request.send();
     var response = await http.Response.fromStream(res);
-
-    return _handleResponse(response);
+    return _handleResponse(response, url: url, method: "PUT");
   }
 
-  static dynamic _handleResponse(http.Response response) async {
+  static Future<dynamic> _handleResponse(
+    http.Response response, {
+    String? url,
+    dynamic body,
+    String method = "GET",
+    bool isRetry = false,
+  }) async {
+    // ✅ HTML response aa raha hai toh token expire hua hai
+    if (response.body.trimLeft().startsWith('<')) {
+      if (!isRetry && url != null) {
+        final refreshed = await _tryRefresh();
+        if (refreshed) {
+          return _retryRequest(url, body, method);
+        }
+      }
+      throw Exception("Session expired. Please login again.");
+    }
+
     final data = jsonDecode(response.body);
 
-    // if (response.statusCode == 401) {
-    //   // 🔥 auto refresh logic
-    //   final newToken = await _refreshToken();
-
-    //   if (newToken != null) {
-    //     throw Exception("retry"); // frontend retry karega
-    //   }
-    // }
+    // ✅ 401 handle
+    if (response.statusCode == 401 && !isRetry && url != null) {
+      final refreshed = await _tryRefresh();
+      if (refreshed) {
+        return _retryRequest(url, body, method);
+      }
+      throw Exception("Session expired. Please login again.");
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     } else {
-      // throw Exception(data["message"] ?? "Error");
       throw Exception(data["message"] ?? data["error"] ?? "Something went wrong");
+    }
+  }
+
+  // ✅ Retry original request after token refresh
+  static Future<dynamic> _retryRequest(String url, dynamic body, String method) async {
+    http.Response response;
+
+    if (method == "GET") {
+      response = await http.get(
+        Uri.parse("$baseUrl$url"),
+        headers: await _headers(),
+      );
+    } else {
+      response = await http.post(
+        Uri.parse("$baseUrl$url"),
+        headers: await _headers(),
+        body: jsonEncode(body),
+      );
+    }
+
+    return _handleResponse(response, url: url, body: body, method: method, isRetry: true);
+  }
+
+  // ✅ Refresh token se naya access token lo
+  static Future<bool> _tryRefresh() async {
+    try {
+      final refresh = await Storage.getRefreshToken();
+      if (refresh == null) return false;
+
+      final response = await http.post(
+        Uri.parse("$baseUrl/auth/refresh"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": refresh}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await Storage.saveTokens(data["accessToken"], refresh);
+        return true;
+      }
+
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 }

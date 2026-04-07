@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:voxylive/screens/auth/email_screen.dart';
-
-// 👇 Next screen import karo
 import '../auth/get_started_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../utils/storage.dart'; // 👈 add karo
+import '../home/dashboard.dart'; // 👈 add karo
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,16 +11,16 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
 
-    // ⏳ 2 second delay
-    Future.delayed(const Duration(seconds: 8), () {
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const GetStartedScreen())
+        MaterialPageRoute(builder: (_) => const GetStartedScreen()),
       );
     });
   }

@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:voxylive/screens/home/dashboard.dart';
 import '../../services/auth_service.dart';
 import '../../utils/loader.dart';
+import 'package:flutter/services.dart';
 import 'dob_screen.dart';
 import 'dart:async';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
-  const VerificationScreen({super.key, required this.email});
+  final bool isNewUser;
+  const VerificationScreen({
+    super.key,
+    required this.email,
+    required this.isNewUser,
+  });
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
 }
@@ -24,6 +31,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
   );
 
   final List<FocusNode> focusNodes = List.generate(4, (_) => FocusNode());
+
+  Future<void> _checkClipboard() async {
+  final data = await Clipboard.getData(Clipboard.kTextPlain);
+  final text = data?.text?.trim() ?? "";
+
+  if (text.length == 4 && RegExp(r'^\d{4}$').hasMatch(text)) {
+    for (int i = 0; i < 4; i++) {
+      controllers[i].text = text[i];
+    }
+    FocusScope.of(context).unfocus();
+    _onOtpComplete();
+  }
+}
+
 
   void startTimer() {
     seconds = 30;
@@ -48,18 +69,25 @@ class _VerificationScreenState extends State<VerificationScreen> {
     if (otp.length == 4) {
       try {
         Loader.show(context);
-
         await AuthService.verifyOtp(widget.email, otp);
-
         Loader.hide(context);
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DobScreen()),
-        );
+        if (!mounted) return;
+
+        // ✅ isNewUser ke basis pe route
+        if (widget.isNewUser) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DobScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       } catch (e) {
         Loader.hide(context);
-
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
@@ -208,19 +236,28 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       counterText: "",
                       border: InputBorder.none,
                     ),
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onTap: () {
+                      // ✅ Clipboard check karo jab box tap ho
+                      _checkClipboard();
+                    },
                     onChanged: (value) {
-                      if (value.isNotEmpty) {
-                        if (index < 3) {
+                      if (value.isEmpty) {
+                        if (index > 0) {
+                          controllers[index - 1].clear();
                           FocusScope.of(
                             context,
-                          ).requestFocus(focusNodes[index + 1]);
-                        } else {
-                          _onOtpComplete();
+                          ).requestFocus(focusNodes[index - 1]);
                         }
-                      } else if (index > 0) {
+                        return;
+                      }
+                      if (index < 3) {
                         FocusScope.of(
                           context,
-                        ).requestFocus(focusNodes[index - 1]);
+                        ).requestFocus(focusNodes[index + 1]);
+                      } else {
+                        FocusScope.of(context).unfocus();
+                        _onOtpComplete();
                       }
                     },
                   ),

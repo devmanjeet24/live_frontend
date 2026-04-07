@@ -11,4 +11,15 @@ class Storage {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString("access");
   }
+
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("refresh");
+  }
+
+  static Future<void> clearTokens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("access");
+    await prefs.remove("refresh");
+  }
 }

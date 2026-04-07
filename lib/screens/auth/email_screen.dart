@@ -110,19 +110,23 @@ class _EmailScreenState extends State<EmailScreen> {
                   try {
                     Loader.show(context);
 
-                    await AuthService.emailAuth(email);
+                    final isNewUser = await AuthService.emailAuth(
+                      email,
+                    ); // 👈 bool lo
 
                     Loader.hide(context);
 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => VerificationScreen(email: email),
+                        builder: (_) => VerificationScreen(
+                          email: email,
+                          isNewUser: isNewUser, // 👈 pass karo
+                        ),
                       ),
                     );
                   } catch (e) {
                     Loader.hide(context);
-
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(SnackBar(content: Text(e.toString())));

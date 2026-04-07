@@ -3,8 +3,9 @@ import '../utils/storage.dart';
 
 class AuthService {
   /// EMAIL LOGIN / REGISTER
-  static Future<void> emailAuth(String email) async {
-    await Api.post("/auth/email", {"email": email});
+  static Future<bool> emailAuth(String email) async {
+    final res = await Api.post("/auth/email", {"email": email});
+    return res["isNewUser"] ?? false; // 👈 bool return karo
   }
 
   /// VERIFY OTP
