@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voxylive/screens/live/start_stream_screen.dart';
 import 'package:voxylive/services/user_service.dart';
 import '../../utils/storage.dart';
 import '../auth/get_started_screen.dart';
@@ -112,6 +113,35 @@ class ProfileScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 16),
+
+            // Go Live Button
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const StartStreamScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "GO LIVE",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
 
             /// 🔥 BECOME STREAMER
             SizedBox(

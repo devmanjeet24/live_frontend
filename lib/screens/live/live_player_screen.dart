@@ -23,6 +23,15 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     init();
   }
 
+  Future<void> publishCamera() async {
+    try {
+      await room!.localParticipant?.setCameraEnabled(true);
+      await room!.localParticipant?.setMicrophoneEnabled(true);
+    } catch (e) {
+      print("PUBLISH ERROR: $e");
+    }
+  }
+
   Future<void> init() async {
     try {
       /// SOCKET CONNECT
@@ -45,6 +54,10 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
       await room!.connect(url, token, roomOptions: const RoomOptions());
 
+      if (res["isStreamer"] == true) {
+        await publishCamera();
+      }
+
       setState(() => loading = false);
     } catch (e) {
       print("LIVE ERROR: $e");
@@ -66,46 +79,47 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     if (controller.text.trim().isEmpty) return;
 
     SocketService.sendMessage(widget.room, controller.text);
+    setState(() {
+      messages.add("Me: ${controller.text}");
+    });
     controller.clear();
   }
 
   Widget buildVideo() {
-  // Room empty hai toh wait screen
-  if (room == null || room!.remoteParticipants.isEmpty) {
-    return const Center(
-      child: Text(
-        "Waiting for streamer...",
-        style: TextStyle(color: Colors.white),
-      ),
-    );
-  }
-
-  // Pehla participant lo
-  final participant = room!.remoteParticipants.values.first;
-
-  // Uski video publications mein se track dhundho
-  TrackPublication? videoPub;                          // ✅ pehle null rakho
-  for (var pub in participant.videoTrackPublications) { // ✅ loop se dhundho
-    if (pub.track != null) {
-      videoPub = pub;                                  // ✅ mila toh assign karo
-      break;                                           // ✅ loop band karo
+    // Room empty hai toh wait screen
+    if (room == null || room!.remoteParticipants.isEmpty) {
+      return const Center(
+        child: Text(
+          "Waiting for streamer...",
+          style: TextStyle(color: Colors.white),
+        ),
+      );
     }
-  }
 
-  // Video nahi mili toh message dikhao
-  if (videoPub == null) {
-    return const Center(
-      child: Text(
-        "No video yet",
-        style: TextStyle(color: Colors.white),
-      ),
-    );
-  }
+    // Pehla participant lo
+    final participant = room!.remoteParticipants.values.first;
 
-  // Video mili toh render karo
-  // return VideoTrackRenderer(videoPub.track!);
-  return VideoTrackRenderer(videoPub.track! as VideoTrack);
-}
+    // Uski video publications mein se track dhundho
+    TrackPublication? videoPub; // ✅ pehle null rakho
+    for (var pub in participant.videoTrackPublications) {
+      // ✅ loop se dhundho
+      if (pub.track != null) {
+        videoPub = pub; // ✅ mila toh assign karo
+        break; // ✅ loop band karo
+      }
+    }
+
+    // Video nahi mili toh message dikhao
+    if (videoPub == null) {
+      return const Center(
+        child: Text("No video yet", style: TextStyle(color: Colors.white)),
+      );
+    }
+
+    // Video mili toh render karo
+    // return VideoTrackRenderer(videoPub.track!);
+    return VideoTrackRenderer(videoPub.track! as VideoTrack);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +130,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           : Stack(
               children: [
                 /// VIDEO
-                Positioned.fill(
-                  child: buildVideo(),
-                ),
+                Positioned.fill(child: buildVideo()),
 
                 /// CHAT
                 Positioned(

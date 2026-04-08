@@ -34,8 +34,10 @@ class StartStreamScreen extends StatelessWidget {
                 ),
                 onPressed: () async {
                   try {
-                    final roomName =
-                        "room_${DateTime.now().millisecondsSinceEpoch}";
+                    // final roomName =
+                    //     "room_${DateTime.now().millisecondsSinceEpoch}";
+
+                    final roomName = "global_room";
 
                     Navigator.push(
                       context,
