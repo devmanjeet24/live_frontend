@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voxylive/services/user_service.dart';
 import '../../utils/storage.dart';
 import '../auth/get_started_screen.dart';
 import '../auth/edit_profile.dart';
@@ -111,6 +112,45 @@ class ProfileScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 16),
+
+            /// 🔥 BECOME STREAMER
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE98834),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () async {
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Sending request...")),
+                    );
+
+                    await UserService.requestStreamer();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Request sent successfully"),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
+                },
+                child: const Text(
+                  "Become a Streamer",
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 60),
 
             /// LOGOUT BUTTON
             SizedBox(

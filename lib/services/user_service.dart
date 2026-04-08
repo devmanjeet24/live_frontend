@@ -17,5 +17,9 @@ class UserService {
     return await Api.get("/user/profile");
   }
 
+  static Future<void> requestStreamer() async {
+  await Api.post("/user/request-streamer", {});
+ }
+
 }
 

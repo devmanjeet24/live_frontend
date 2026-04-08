@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voxylive/widgets/category_tabs.dart';
 import 'package:voxylive/widgets/streamer_card.dart';
-
+import '../../live/live_player_screen.dart';
 
 class LiveTab extends StatelessWidget {
   const LiveTab({super.key});
@@ -35,8 +35,20 @@ class LiveTab extends StatelessWidget {
                 childAspectRatio: 0.75,
               ),
               itemBuilder: (context, index) {
-                return StreamerCard(
-                  imagePath: images[index % images.length],
+                // return StreamerCard(
+                //   imagePath: images[index % images.length],
+                // );
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LivePlayerScreen(room: "test_room"),
+                      ),
+                    );
+                  },
+                  child: StreamerCard(imagePath: images[index % images.length]),
                 );
               },
             ),

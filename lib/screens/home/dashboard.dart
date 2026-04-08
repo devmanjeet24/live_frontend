@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voxylive/screens/admin/admin_dashboard.dart';
 import 'package:voxylive/screens/home/tabs/chat_tab.dart';
 import 'package:voxylive/screens/home/tabs/discover_tab.dart';
 import 'package:voxylive/screens/home/tabs/live_tab.dart';
@@ -51,10 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadProfile() async {
     try {
-
       final res = await UserService.getProfile();
       // print("PROFILE RES: $res");
-      print("✅ AVATAR: ${res["user"]["avatar"]}"); 
+      print("✅ AVATAR: ${res["user"]["avatar"]}");
 
       setState(() {
         username = res["user"]["username"] ?? "User";
@@ -82,6 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : AppHeader(username: username, avatar: avatar),
             ),
+
+
+             const SizedBox(height: 10),
+
+              /// 🔥 TEMP ADMIN BUTTON
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: ElevatedButton(
+              //     style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              //     onPressed: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(builder: (_) => const AdminDashboard()),
+              //       );
+              //     },
+              //     child: const Text("Open Admin Panel"),
+              //   ),
+              // ),
 
             const SizedBox(height: 20),
 

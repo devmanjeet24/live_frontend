@@ -22,6 +22,15 @@ class Api {
     return _handleResponse(response, url: url, body: body, method: "POST");
   }
 
+  static Future<dynamic> put(String url, dynamic body) async {
+    final response = await http.put(
+      Uri.parse("$baseUrl$url"),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    return _handleResponse(response, url: url, body: body, method: "PUT");
+  }
+
   static Future<dynamic> get(String url) async {
     final response = await http.get(
       Uri.parse("$baseUrl$url"),
@@ -80,12 +89,18 @@ class Api {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return data;
     } else {
-      throw Exception(data["message"] ?? data["error"] ?? "Something went wrong");
+      throw Exception(
+        data["message"] ?? data["error"] ?? "Something went wrong",
+      );
     }
   }
 
   // ✅ Retry original request after token refresh
-  static Future<dynamic> _retryRequest(String url, dynamic body, String method) async {
+  static Future<dynamic> _retryRequest(
+    String url,
+    dynamic body,
+    String method,
+  ) async {
     http.Response response;
 
     if (method == "GET") {
@@ -101,7 +116,13 @@ class Api {
       );
     }
 
-    return _handleResponse(response, url: url, body: body, method: method, isRetry: true);
+    return _handleResponse(
+      response,
+      url: url,
+      body: body,
+      method: method,
+      isRetry: true,
+    );
   }
 
   // ✅ Refresh token se naya access token lo
