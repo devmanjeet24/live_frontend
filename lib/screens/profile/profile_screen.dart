@@ -129,7 +129,9 @@ class ProfileScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const StartStreamScreen(),
+                      builder: (_) => StartStreamScreen(
+                        username: username,
+                      ),
                     ),
                   );
                 },

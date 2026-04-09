@@ -5,7 +5,8 @@ import 'package:voxylive/widgets/category_tabs.dart';
 import '../../live/live_player_screen.dart';
 
 class LiveTab extends StatelessWidget {
-  const LiveTab({super.key});
+  final String username;
+  const LiveTab({super.key, required this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +29,7 @@ class LiveTab extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const LivePlayerScreen(room: "global_room"),
+                  builder: (_) => LivePlayerScreen(room: "global_room", username: username,),
                 ),
               );
             },

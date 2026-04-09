@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:voxylive/screens/live/live_player_screen.dart';
 
 class StartStreamScreen extends StatelessWidget {
-  const StartStreamScreen({super.key});
+  final String username;
+  const StartStreamScreen({super.key, required this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +43,7 @@ class StartStreamScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => LivePlayerScreen(room: roomName),
+                        builder: (_) => LivePlayerScreen(room: roomName, username: username,),
                       ),
                     );
                   } catch (e) {

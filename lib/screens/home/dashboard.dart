@@ -31,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   int currentIndex = 0;
 
-  final screens = [
-    const LiveTab(),
+  List<Widget> get screens => [
+    LiveTab(username: username),
     const DiscoverTab(),
     const ChatTab(),
     const MyHubTab(),
@@ -83,23 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : AppHeader(username: username, avatar: avatar),
             ),
 
-
-             const SizedBox(height: 10),
-
-              /// 🔥 TEMP ADMIN BUTTON
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 20),
-              //   child: ElevatedButton(
-              //     style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              //     onPressed: () {
-              //       Navigator.push(
-              //         context,
-              //         MaterialPageRoute(builder: (_) => const AdminDashboard()),
-              //       );
-              //     },
-              //     child: const Text("Open Admin Panel"),
-              //   ),
-              // ),
+            const SizedBox(height: 10),
 
             const SizedBox(height: 20),
 

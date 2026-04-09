@@ -5,8 +5,13 @@ import '../../services/socket_service.dart';
 
 class LivePlayerScreen extends StatefulWidget {
   final String room;
+  final String username;
 
-  const LivePlayerScreen({super.key, required this.room});
+  const LivePlayerScreen({
+    super.key,
+    required this.room,
+    required this.username,
+  });
 
   @override
   State<LivePlayerScreen> createState() => _LivePlayerScreenState();
@@ -32,43 +37,63 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     }
   }
 
+
+  
   Future<void> init() async {
     try {
-      /// SOCKET CONNECT
       SocketService.connect();
-      SocketService.joinRoom(widget.room);
+      SocketService.joinRoomAfterConnect({
+        "roomId": widget.room,
+        "username": widget.username,
+      });
 
       SocketService.listenMessages((data) {
+        print("🔥 RECEIVED: $data");
         setState(() {
           messages.add("${data['user']}: ${data['message']}");
         });
       });
 
-      /// LIVEKIT TOKEN
       final res = await StreamService.getToken(widget.room);
+      print("✅ TOKEN RES: $res");
 
       final url = "wss://voxylive-narna5pf.livekit.cloud";
       final token = res["token"];
 
       room = Room();
 
-      await room!.connect(url, token, roomOptions: const RoomOptions());
+      await room!.connect(
+        url,
+        token,
+        roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
+      );
+
+      print("✅ ROOM CONNECTED");
 
       if (res["isStreamer"] == true) {
+        print("✅ STREAMER DETECTED, publishing camera...");
         await publishCamera();
+      } else {
+        print("👁 VIEWER MODE");
       }
 
       setState(() => loading = false);
     } catch (e) {
-      print("LIVE ERROR: $e");
+      print("❌ FULL ERROR: $e");
+      print("❌ ERROR TYPE: ${e.runtimeType}");
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Failed to join stream")));
+      ).showSnackBar(SnackBar(content: Text("Failed: $e")));
     }
   }
 
   @override
   void dispose() {
+    SocketService.socket?.emit("leave-room", {
+      "roomId": widget.room,
+      "username": widget.username,
+    });
+
     room?.disconnect();
     super.dispose();
   }
@@ -78,47 +103,52 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   void send() {
     if (controller.text.trim().isEmpty) return;
 
-    SocketService.sendMessage(widget.room, controller.text);
-    setState(() {
-      messages.add("Me: ${controller.text}");
-    });
+    final msg = controller.text;
+
+    /// 🔥 LOCAL ADD (IMPORTANT)
+    // setState(() {
+    //   messages.add("${widget.username}: $msg");
+    // });
+
+    SocketService.sendMessage(widget.room, msg, widget.username);
+
     controller.clear();
   }
 
   Widget buildVideo() {
-    // Room empty hai toh wait screen
-    if (room == null || room!.remoteParticipants.isEmpty) {
+    if (room == null) {
       return const Center(
-        child: Text(
-          "Waiting for streamer...",
-          style: TextStyle(color: Colors.white),
-        ),
+        child: Text("Connecting...", style: TextStyle(color: Colors.white)),
       );
     }
 
-    // Pehla participant lo
-    final participant = room!.remoteParticipants.values.first;
+    /// 🎯 STREAMER → own video
+    final localPubs = room!.localParticipant?.videoTrackPublications ?? [];
 
-    // Uski video publications mein se track dhundho
-    TrackPublication? videoPub; // ✅ pehle null rakho
-    for (var pub in participant.videoTrackPublications) {
-      // ✅ loop se dhundho
-      if (pub.track != null) {
-        videoPub = pub; // ✅ mila toh assign karo
-        break; // ✅ loop band karo
+    if (localPubs.isNotEmpty && localPubs.first.track != null) {
+      return VideoTrackRenderer(localPubs.first.track!);
+    }
+
+    /// 🎯 VIEWER → remote video
+    if (room!.remoteParticipants.isNotEmpty) {
+      final participant = room!.remoteParticipants.values.first;
+
+      final pubs = participant.videoTrackPublications
+          .where((e) => e.track != null)
+          .toList();
+
+      if (pubs.isNotEmpty) {
+        return VideoTrackRenderer(pubs.first.track!);
       }
     }
 
-    // Video nahi mili toh message dikhao
-    if (videoPub == null) {
-      return const Center(
-        child: Text("No video yet", style: TextStyle(color: Colors.white)),
-      );
-    }
-
-    // Video mili toh render karo
-    // return VideoTrackRenderer(videoPub.track!);
-    return VideoTrackRenderer(videoPub.track! as VideoTrack);
+    /// fallback
+    return const Center(
+      child: Text(
+        "Waiting for streamer...",
+        style: TextStyle(color: Colors.white),
+      ),
+    );
   }
 
   @override
@@ -167,6 +197,37 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+
+                /// 🔴 END BUTTON (TOP RIGHT)
+                Positioned(
+                  top: 40,
+                  right: 20,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    onPressed: () async {
+                      try {
+                        SocketService.socket?.emit("leave-room", {
+                          "roomId": widget.room,
+                          "username": widget.username,
+                        });
+
+                        await room?.disconnect();
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      } catch (e) {
+                        print("EXIT ERROR: $e");
+                      }
+                    },
+                    child: const Text("End"),
                   ),
                 ),
               ],

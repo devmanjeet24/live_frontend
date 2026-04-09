@@ -39,14 +39,23 @@ class SocketService {
   }
 
   /// 🏠 JOIN ROOM
-  static void joinRoom(String roomId) {
+  static void joinRoom(Map<String, String> data) {
     if (socket == null || !socket!.connected) {
       print("❌ Socket not connected");
       return;
     }
 
-    socket!.emit("join-room", roomId);
-    print("➡️ Joined room: $roomId");
+    socket!.emit("join-room", data);
+    print("➡️ Joined room: ${data["roomId"]} as ${data["username"]}");
+  }
+
+  static void joinRoomAfterConnect(Map<String, String> data) {
+    if (socket == null) return;
+
+    socket!.onConnect((_) {
+      print("✅ Connected, joining room...");
+      socket!.emit("join-room", data);
+    });
   }
 
   /// 🚪 LEAVE ROOM
@@ -56,7 +65,7 @@ class SocketService {
   }
 
   /// 💬 SEND MESSAGE
-  static void sendMessage(String roomId, String message) {
+  static void sendMessage(String roomId, String message, String username) {
     if (message.trim().isEmpty) {
       print("⚠️ Empty message blocked");
       return;
@@ -65,7 +74,7 @@ class SocketService {
     socket?.emit("send-message", {
       "roomId": roomId,
       "message": message,
-      "user": "User", // later dynamic karenge
+      "user": username, // later dynamic karenge
     });
 
     print("📤 Sent: $message");
