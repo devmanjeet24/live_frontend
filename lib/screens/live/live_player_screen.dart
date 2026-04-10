@@ -22,6 +22,13 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   bool loading = true;
   List<String> messages = [];
 
+  int viewers = 0;
+  bool isMuted = false;
+  List hearts = [];
+
+  int likes = 0;
+  int dislikes = 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,26 +44,44 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     }
   }
 
-
-  
   Future<void> init() async {
     try {
+      /// 🔥 STEP 1: पहले TOKEN लो
+      final res = await StreamService.getToken(widget.room);
+      print("✅ TOKEN RES: $res");
+
+      /// 🔥 STEP 2: SOCKET CONNECT
       SocketService.connect();
+
+      /// 🔥 STEP 3: JOIN ROOM (अब सही है)
       SocketService.joinRoomAfterConnect({
         "roomId": widget.room,
         "username": widget.username,
+        "isStreamer": res["isStreamer"], 
+        "avatar": res["avatar"] ?? "", 
       });
 
+      /// 🔥 STEP 4: LISTENERS
       SocketService.listenMessages((data) {
-        print("🔥 RECEIVED: $data");
+        print("🔥LIVE STREAMERS RECEIVED: $data");
         setState(() {
           messages.add("${data['user']}: ${data['message']}");
         });
       });
 
-      final res = await StreamService.getToken(widget.room);
-      print("✅ TOKEN RES: $res");
+      SocketService.listenViewer((count) {
+        setState(() => viewers = count);
+      });
 
+      SocketService.listenReaction((data) {
+        if (data["type"] == "like") {
+          setState(() => likes++);
+        } else {
+          setState(() => dislikes++);
+        }
+      });
+
+      /// 🔥 STEP 5: LIVEKIT CONNECT
       final url = "wss://voxylive-narna5pf.livekit.cloud";
       final token = res["token"];
 
@@ -70,6 +95,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
       print("✅ ROOM CONNECTED");
 
+      /// 🔥 STEP 6: STREAMER CHECK
       if (res["isStreamer"] == true) {
         print("✅ STREAMER DETECTED, publishing camera...");
         await publishCamera();
@@ -80,7 +106,6 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       setState(() => loading = false);
     } catch (e) {
       print("❌ FULL ERROR: $e");
-      print("❌ ERROR TYPE: ${e.runtimeType}");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Failed: $e")));
@@ -162,6 +187,87 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                 /// VIDEO
                 Positioned.fill(child: buildVideo()),
 
+                //  Like + viewer
+                Positioned(
+                  top: 40,
+                  left: 20,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        color: Colors.red,
+                        child: Text("LIVE"),
+                      ),
+                      SizedBox(width: 10),
+                      Container(
+                        padding: EdgeInsets.all(6),
+                        color: Colors.black54,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.remove_red_eye,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                viewers.toString(),
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Positioned(
+                //   bottom: 180,
+                //   right: 20,
+                //   child: IconButton(
+                //     icon: Icon(isMuted ? Icons.mic_off : Icons.mic),
+                //     onPressed: () async {
+                //       isMuted = !isMuted;
+
+                //       await room!.localParticipant?.setMicrophoneEnabled(
+                //         !isMuted,
+                //       );
+
+                //       setState(() {});
+                //     },
+                //   ),
+                // ),
+                Positioned(
+                  right: 20,
+                  bottom: 180,
+                  child: IconButton(
+                    icon: Icon(
+                      isMuted ? Icons.mic_off : Icons.mic,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () async {
+                      isMuted = !isMuted;
+
+                      await room!.localParticipant?.setMicrophoneEnabled(
+                        !isMuted,
+                      );
+
+                      setState(() {});
+                    },
+                  ),
+                ),
+
                 /// CHAT
                 Positioned(
                   bottom: 0,
@@ -196,6 +302,32 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+
+                Positioned(
+                  right: 20,
+                  bottom: 100,
+                  child: Column(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.thumb_up, color: Colors.green),
+                        onPressed: () {
+                          SocketService.sendReaction(widget.room, "like");
+                        },
+                      ),
+                      Text("$likes", style: TextStyle(color: Colors.white)),
+
+                      SizedBox(height: 10),
+
+                      IconButton(
+                        icon: Icon(Icons.thumb_down, color: Colors.red),
+                        onPressed: () {
+                          SocketService.sendReaction(widget.room, "dislike");
+                        },
+                      ),
+                      Text("$dislikes", style: TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),

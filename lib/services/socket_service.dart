@@ -21,8 +21,10 @@ class SocketService {
           .build(),
     );
 
+    socket!.connect();
+
     socket!.onConnect((_) {
-      print("🟢 SOCKET CONNECTED: ${socket!.id}");
+      print("🟢 SOCKET CONNECTED (GLOBAL): ${socket!.id}");
     });
 
     socket!.onDisconnect((_) {
@@ -49,13 +51,20 @@ class SocketService {
     print("➡️ Joined room: ${data["roomId"]} as ${data["username"]}");
   }
 
-  static void joinRoomAfterConnect(Map<String, String> data) {
+  static void joinRoomAfterConnect(Map<String, dynamic> data) {
     if (socket == null) return;
 
-    socket!.onConnect((_) {
-      print("✅ Connected, joining room...");
+    if (socket!.connected) {
+      // Already connected → seedha emit karo
+      print("✅ Already connected, joining room directly...");
       socket!.emit("join-room", data);
-    });
+    } else {
+      // Wait for connect
+      socket!.once("connect", (_) {
+        print("✅ Connected now, joining room...");
+        socket!.emit("join-room", data);
+      });
+    }
   }
 
   /// 🚪 LEAVE ROOM
@@ -91,6 +100,34 @@ class SocketService {
       print("📩 MESSAGE RECEIVED: $data");
       callback(data);
     });
+  }
+
+  /// 👀 VIEWER COUNT
+  static void listenViewer(Function(dynamic) cb) {
+    socket?.on("viewer-count", cb);
+  }
+
+  /// ❤️ LIKE
+  static void sendLike(String roomId) {
+    socket?.emit("send-like", {"roomId": roomId});
+  }
+
+  static void listenLike(Function() cb) {
+    socket?.on("receive-like", (_) => cb());
+  }
+
+  static void sendReaction(String roomId, String type) {
+    socket?.emit("send-reaction", {"roomId": roomId, "type": type});
+  }
+
+  static void listenReaction(Function(dynamic) cb) {
+    socket?.on("receive-reaction", cb);
+  }
+
+  /// 🎥 LIVE STREAMERS LIST
+  static void listenLiveStreamers(Function(dynamic) cb) {
+    socket?.off("live-streamers"); // 🔥 important
+    socket?.on("live-streamers", cb);
   }
 
   /// 🔚 DISPOSE

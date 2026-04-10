@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 
 class StreamerCard extends StatelessWidget {
   final String imagePath;
+  final String streamerName;
+  final String viewers;
+  final String avatarUrl;
 
-  const StreamerCard({super.key, required this.imagePath});
+  const StreamerCard({
+    super.key,
+    required this.imagePath,
+    this.streamerName = "Streamer",
+    this.viewers = "0",
+    this.avatarUrl = "",
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +21,7 @@ class StreamerCard extends StatelessWidget {
       child: Stack(
         children: [
           /// IMAGE
-          Positioned.fill(child: Image.asset(imagePath, fit: BoxFit.cover)),
+          Positioned.fill(child: Image.network(imagePath, fit: BoxFit.cover)),
 
           /// TOP LEFT (views)
           Positioned(
@@ -24,13 +33,19 @@ class StreamerCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.remove_red_eye, color: Colors.white, size: 12),
-                  SizedBox(width: 3),
-                  Text("12",
-                      style: TextStyle(color: Colors.white, fontSize: 11)),
+                  const Icon(
+                    Icons.remove_red_eye,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    viewers,
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                  ),
                 ],
               ),
             ),
@@ -42,39 +57,40 @@ class StreamerCard extends StatelessWidget {
             right: 10,
             bottom: 10,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                   CircleAvatar(
                     radius: 12,
-                    backgroundImage:
-                        AssetImage("assets/images/avattar.png"),
+                    backgroundImage: avatarUrl.isNotEmpty
+                        ? NetworkImage(avatarUrl) // server se image
+                        : const AssetImage("assets/images/avattar.png")
+                              as ImageProvider,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          "Name of the Streamer",
+                          streamerName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: "MuseoModerno",
                             fontWeight: FontWeight.w500,
                             color: Colors.white,
                             fontSize: 11,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          "13.25M",
-                          style: TextStyle(
+                          "$viewers viewers",
+                          style: const TextStyle(
                             fontFamily: "Inter",
                             color: Colors.white70,
                             fontSize: 9,
