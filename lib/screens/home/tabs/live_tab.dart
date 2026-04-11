@@ -87,7 +87,7 @@ class _LiveTabState extends State<LiveTab> {
                     },
                     /// StreamerCard wala original design
                     child: StreamerCard(
-                      imagePath: "assets/images/streamer${(index % 6) + 1}.png",
+                      // imagePath: "assets/images/streamer${(index % 6) + 1}.png",
                       streamerName: s["username"] ?? "Unknown",
                       viewers: s["viewers"]?.toString() ?? "0",
                       avatarUrl: s["avatar"] ?? "", 

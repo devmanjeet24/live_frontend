@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class StreamerCard extends StatelessWidget {
-  final String imagePath;
+  // final String imagePath;
   final String streamerName;
   final String viewers;
   final String avatarUrl;
 
   const StreamerCard({
     super.key,
-    required this.imagePath,
+    // required this.imagePath,
     this.streamerName = "Streamer",
     this.viewers = "0",
     this.avatarUrl = "",
@@ -21,7 +21,19 @@ class StreamerCard extends StatelessWidget {
       child: Stack(
         children: [
           /// IMAGE
-          Positioned.fill(child: Image.network(imagePath, fit: BoxFit.cover)),
+          // Positioned.fill(child: Image.network(imagePath, fit: BoxFit.cover)),
+          Positioned.fill(
+            child: avatarUrl.isNotEmpty
+                ? Image.network(
+                    avatarUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      "assets/images/streamer1.png",
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Image.asset("assets/images/streamer1.png", fit: BoxFit.cover),
+          ),
 
           /// TOP LEFT (views)
           Positioned(
@@ -64,7 +76,7 @@ class StreamerCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                   CircleAvatar(
+                  CircleAvatar(
                     radius: 12,
                     backgroundImage: avatarUrl.isNotEmpty
                         ? NetworkImage(avatarUrl) // server se image

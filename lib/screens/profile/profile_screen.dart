@@ -8,8 +8,14 @@ import '../auth/edit_profile.dart';
 class ProfileScreen extends StatelessWidget {
   final String username;
   final String? avatar;
+  final String role;
 
-  const ProfileScreen({super.key, required this.username, this.avatar});
+  const ProfileScreen({
+    super.key,
+    required this.username,
+    this.avatar,
+    this.role = "user",
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -115,35 +121,36 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Go Live Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => StartStreamScreen(
-                        username: username,
-                      ),
+            if (role == "streamer")
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                  );
-                },
-                child: const Text(
-                  "GO LIVE",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StartStreamScreen(username: username),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "GO LIVE",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
+
+              const SizedBox(height: 16),
 
             /// 🔥 BECOME STREAMER
             SizedBox(

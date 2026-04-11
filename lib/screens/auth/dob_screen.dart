@@ -310,9 +310,9 @@ class _DobScreenState extends State<DobScreen> {
     if (selectedTab == 0) {
       return ScrollbarTheme(
         data: ScrollbarThemeData(
-          thumbColor: MaterialStateProperty.all(const Color(0xFFE98834)),
-          trackColor: MaterialStateProperty.all(Colors.white10),
-          thickness: MaterialStateProperty.all(3),
+          thumbColor: WidgetStateProperty.all(const Color(0xFFE98834)),
+          trackColor: WidgetStateProperty.all(Colors.white10),
+          thickness: WidgetStateProperty.all(3),
           radius: const Radius.circular(10),
         ),
         child: Scrollbar(

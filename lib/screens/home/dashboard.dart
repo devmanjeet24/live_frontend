@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String username = "";
   String? avatar;
   bool loading = true;
+  String role = "user"; 
 
   @override
   int currentIndex = 0;
@@ -59,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         username = res["user"]["username"] ?? "User";
         avatar = res["user"]["avatar"];
+        role = res["user"]["role"] ?? "user";
         loading = false;
       });
     } catch (e) {
@@ -80,7 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: loading
                   ? const Center(child: CircularProgressIndicator())
-                  : AppHeader(username: username, avatar: avatar),
+                  : AppHeader(
+                    username: username, 
+                    avatar: avatar,
+                    role: role,
+                    ),
             ),
 
             const SizedBox(height: 10),

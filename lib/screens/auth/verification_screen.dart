@@ -326,9 +326,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
+@override
+void dispose() {
+  
+  timer?.cancel();
+
+  for (var c in controllers) {
+    c.dispose();
   }
+
+  for (var f in focusNodes) {
+    f.dispose();
+  }
+
+  super.dispose();
+}
 }

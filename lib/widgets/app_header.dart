@@ -4,8 +4,15 @@ import 'package:voxylive/screens/profile/profile_screen.dart'; // 👈 add karo
 class AppHeader extends StatelessWidget {
   final String username;
   final String? avatar;
+  final String role;
 
-  const AppHeader({super.key, required this.username, this.avatar});
+
+  const AppHeader({
+    super.key, 
+    required this.username, 
+    this.avatar,
+    required this.role,
+    });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,11 @@ class AppHeader extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          ProfileScreen(username: username, avatar: avatar),
+                          ProfileScreen(
+                            username: username, 
+                            avatar: avatar,
+                            role: role,
+                            ),
                     ),
                   );
                 },

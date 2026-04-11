@@ -21,13 +21,13 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   Room? room;
   bool loading = true;
   List<String> messages = [];
-
   int viewers = 0;
   bool isMuted = false;
-  List hearts = [];
-
   int likes = 0;
   int dislikes = 0;
+  bool isStreamer = false;
+  final TextEditingController controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -46,33 +46,36 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
   Future<void> init() async {
     try {
-      /// 🔥 STEP 1: पहले TOKEN लो
       final res = await StreamService.getToken(widget.room);
+      isStreamer = res["isStreamer"] == true;
+      print("IS STREAMER: $isStreamer");
+
       print("✅ TOKEN RES: $res");
-
-      /// 🔥 STEP 2: SOCKET CONNECT
       SocketService.connect();
-
-      /// 🔥 STEP 3: JOIN ROOM (अब सही है)
       SocketService.joinRoomAfterConnect({
         "roomId": widget.room,
         "username": widget.username,
-        "isStreamer": res["isStreamer"], 
-        "avatar": res["avatar"] ?? "", 
+        "isStreamer": res["isStreamer"],
+        "avatar": res["avatar"] ?? "",
       });
-
-      /// 🔥 STEP 4: LISTENERS
       SocketService.listenMessages((data) {
-        print("🔥LIVE STREAMERS RECEIVED: $data");
         setState(() {
           messages.add("${data['user']}: ${data['message']}");
         });
+        // auto scroll to bottom
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
       });
-
       SocketService.listenViewer((count) {
         setState(() => viewers = count);
       });
-
       SocketService.listenReaction((data) {
         if (data["type"] == "like") {
           setState(() => likes++);
@@ -80,29 +83,18 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           setState(() => dislikes++);
         }
       });
-
-      /// 🔥 STEP 5: LIVEKIT CONNECT
       final url = "wss://voxylive-narna5pf.livekit.cloud";
       final token = res["token"];
-
       room = Room();
-
       await room!.connect(
         url,
         token,
         roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );
-
       print("✅ ROOM CONNECTED");
-
-      /// 🔥 STEP 6: STREAMER CHECK
       if (res["isStreamer"] == true) {
-        print("✅ STREAMER DETECTED, publishing camera...");
         await publishCamera();
-      } else {
-        print("👁 VIEWER MODE");
       }
-
       setState(() => loading = false);
     } catch (e) {
       print("❌ FULL ERROR: $e");
@@ -118,25 +110,15 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       "roomId": widget.room,
       "username": widget.username,
     });
-
     room?.disconnect();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  final TextEditingController controller = TextEditingController();
-
   void send() {
     if (controller.text.trim().isEmpty) return;
-
     final msg = controller.text;
-
-    /// 🔥 LOCAL ADD (IMPORTANT)
-    // setState(() {
-    //   messages.add("${widget.username}: $msg");
-    // });
-
     SocketService.sendMessage(widget.room, msg, widget.username);
-
     controller.clear();
   }
 
@@ -146,32 +128,62 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
         child: Text("Connecting...", style: TextStyle(color: Colors.white)),
       );
     }
-
-    /// 🎯 STREAMER → own video
     final localPubs = room!.localParticipant?.videoTrackPublications ?? [];
-
     if (localPubs.isNotEmpty && localPubs.first.track != null) {
       return VideoTrackRenderer(localPubs.first.track!);
     }
-
-    /// 🎯 VIEWER → remote video
     if (room!.remoteParticipants.isNotEmpty) {
       final participant = room!.remoteParticipants.values.first;
-
       final pubs = participant.videoTrackPublications
           .where((e) => e.track != null)
           .toList();
-
-      if (pubs.isNotEmpty) {
-        return VideoTrackRenderer(pubs.first.track!);
-      }
+      if (pubs.isNotEmpty) return VideoTrackRenderer(pubs.first.track!);
     }
-
-    /// fallback
     return const Center(
       child: Text(
         "Waiting for streamer...",
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(color: Colors.white70),
+      ),
+    );
+  }
+
+  /// 🎨 Single chat message bubble
+  Widget _buildMessage(String msg) {
+    final parts = msg.split(": ");
+    final user = parts.length > 1 ? parts[0] : "";
+    final text = parts.length > 1 ? parts.sublist(1).join(": ") : msg;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "$user  ",
+                    style: const TextStyle(
+                      color: Color(0xFFE98834),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  TextSpan(
+                    text: text,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -181,189 +193,287 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFE98834)),
+            )
           : Stack(
               children: [
-                /// VIDEO
+                /// 🎥 VIDEO — full screen
                 Positioned.fill(child: buildVideo()),
 
-                //  Like + viewer
+                /// 🔴 TOP LEFT — LIVE + viewers
                 Positioned(
-                  top: 40,
-                  left: 20,
+                  top: 50,
+                  left: 16,
                   child: Row(
                     children: [
+                      /// LIVE badge
                       Container(
-                        padding: EdgeInsets.all(6),
-                        color: Colors.red,
-                        child: Text("LIVE"),
-                      ),
-                      SizedBox(width: 10),
-                      Container(
-                        padding: EdgeInsets.all(6),
-                        color: Colors.black54,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.remove_red_eye,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              SizedBox(width: 5),
-                              Text(
-                                viewers.toString(),
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          "● LIVE",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                      const SizedBox(width: 8),
 
-                // Positioned(
-                //   bottom: 180,
-                //   right: 20,
-                //   child: IconButton(
-                //     icon: Icon(isMuted ? Icons.mic_off : Icons.mic),
-                //     onPressed: () async {
-                //       isMuted = !isMuted;
-
-                //       await room!.localParticipant?.setMicrophoneEnabled(
-                //         !isMuted,
-                //       );
-
-                //       setState(() {});
-                //     },
-                //   ),
-                // ),
-                Positioned(
-                  right: 20,
-                  bottom: 180,
-                  child: IconButton(
-                    icon: Icon(
-                      isMuted ? Icons.mic_off : Icons.mic,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                    onPressed: () async {
-                      isMuted = !isMuted;
-
-                      await room!.localParticipant?.setMicrophoneEnabled(
-                        !isMuted,
-                      );
-
-                      setState(() {});
-                    },
-                  ),
-                ),
-
-                /// CHAT
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 200,
-                        child: ListView(
-                          children: messages
-                              .map(
-                                (e) => Text(
-                                  e,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              )
-                              .toList(),
+                      /// Viewers
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
                         ),
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: controller,
-                              style: const TextStyle(color: Colors.white),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.remove_red_eye,
+                              color: Colors.white70,
+                              size: 14,
                             ),
-                          ),
-                          IconButton(
-                            onPressed: send,
-                            icon: const Icon(Icons.send, color: Colors.orange),
-                          ),
-                        ],
+                            const SizedBox(width: 5),
+                            Text(
+                              viewers.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
 
+                /// ❌ TOP RIGHT — End button
                 Positioned(
-                  right: 20,
-                  bottom: 100,
-                  child: Column(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.thumb_up, color: Colors.green),
-                        onPressed: () {
-                          SocketService.sendReaction(widget.room, "like");
-                        },
-                      ),
-                      Text("$likes", style: TextStyle(color: Colors.white)),
-
-                      SizedBox(height: 10),
-
-                      IconButton(
-                        icon: Icon(Icons.thumb_down, color: Colors.red),
-                        onPressed: () {
-                          SocketService.sendReaction(widget.room, "dislike");
-                        },
-                      ),
-                      Text("$dislikes", style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                ),
-
-                /// 🔴 END BUTTON (TOP RIGHT)
-                Positioned(
-                  top: 40,
-                  right: 20,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    onPressed: () async {
+                  top: 46,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: () async {
                       try {
                         SocketService.socket?.emit("leave-room", {
                           "roomId": widget.room,
                           "username": widget.username,
                         });
-
                         await room?.disconnect();
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
+                        if (context.mounted) Navigator.pop(context);
                       } catch (e) {
                         print("EXIT ERROR: $e");
                       }
                     },
-                    child: const Text("End"),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "End",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                //  Mic
+                if (isStreamer)
+                  Positioned(
+                    right: 14,
+                    bottom: 120,
+                    child: _circleBtn(
+                      icon: isMuted ? Icons.mic_off : Icons.mic,
+                      color: isMuted ? Colors.red : Colors.white,
+                      onTap: () async {
+                        isMuted = !isMuted;
+                        await room!.localParticipant?.setMicrophoneEnabled(
+                          !isMuted,
+                        );
+                        setState(() {});
+                      },
+                    ),
+                  ),
+
+                /// 🎙 RIGHT SIDE — Like/Dislike
+                if (!isStreamer)
+                  Positioned(
+                    right: 14,
+                    bottom: 120,
+                    child: Column(
+                      children: [
+                        /// MIC
+                        // _circleBtn(
+                        //   icon: isMuted ? Icons.mic_off : Icons.mic,
+                        //   color: isMuted ? Colors.red : Colors.white,
+                        //   onTap: () async {
+                        //     isMuted = !isMuted;
+                        //     await room!.localParticipant?.setMicrophoneEnabled(
+                        //       !isMuted,
+                        //     );
+                        //     setState(() {});
+                        //   },
+                        // ),
+                        const SizedBox(height: 16),
+
+                        /// LIKE
+                        _circleBtn(
+                          icon: Icons.thumb_up_rounded,
+                          color: const Color(0xFF4CAF50),
+                          onTap: () =>
+                              SocketService.sendReaction(widget.room, "like"),
+                        ),
+                        Text(
+                          "$likes",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// DISLIKE
+                        _circleBtn(
+                          icon: Icons.thumb_down_rounded,
+                          color: Colors.redAccent,
+                          onTap: () => SocketService.sendReaction(
+                            widget.room,
+                            "dislike",
+                          ),
+                        ),
+                        Text(
+                          "$dislikes",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                /// 💬 BOTTOM — Chat + Input
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 80, // right side buttons ke liye space
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// Messages list
+                      SizedBox(
+                        height: 180,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: messages.length,
+                          itemBuilder: (_, i) => _buildMessage(messages[i]),
+                        ),
+                      ),
+
+                      /// Input row
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(12, 6, 12, 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: controller,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: "Say something...",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 14,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onSubmitted: (_) => send(),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: send,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE98834),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  /// 🔵 Reusable circle icon button
+  Widget _circleBtn({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.45),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.15)),
+        ),
+        child: Icon(icon, color: color, size: 22),
+      ),
     );
   }
 }
