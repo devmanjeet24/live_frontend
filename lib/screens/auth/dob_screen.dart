@@ -74,9 +74,11 @@ class _DobScreenState extends State<DobScreen> {
 
       Loader.hide(context);
 
-      Navigator.push(
+      // Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const FinishSetupScreen()),
+        (route) => false,
       );
     } catch (e) {
       Loader.hide(context);

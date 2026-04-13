@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:voxylive/services/coin_service.dart';
+import 'package:voxylive/utils/storage.dart';
 import 'package:voxylive/widgets/gift_panel.dart';
 import '../../services/stream_service.dart';
 import '../../services/socket_service.dart';
@@ -14,7 +15,7 @@ class LivePlayerScreen extends StatefulWidget {
     super.key,
     required this.room,
     required this.username,
-    required this.streamerUsername
+    required this.streamerUsername,
   });
 
   @override
@@ -55,9 +56,18 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   Future<void> init() async {
     try {
       final res = await StreamService.getToken(widget.room);
+      final accessToken = await Storage.getAccessToken();
+      print("ACCESS TOKEN: $accessToken");
       streamerUsername = widget.streamerUsername;
-      final coinRes = await CoinService.getBalance();
-      setState(() => coinBalance = coinRes);
+
+      try {
+        final coinRes = await CoinService.getBalance();
+        setState(() => coinBalance = coinRes);
+      } catch (e) {
+        print("⚠️ Coin balance fetch failed (non-critical): $e");
+        // coinBalance = 0 already set hai, stream continue karegi
+      }
+
       isStreamer = res["isStreamer"] == true;
       print("IS STREAMER: $isStreamer");
 
@@ -105,7 +115,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
         }
       });
       final url = "wss://voxylive-narna5pf.livekit.cloud";
-      final token = res["token"];
+      final token = res["token"] ?? "";
       room = Room();
       await room!.connect(
         url,

@@ -3,6 +3,7 @@ import 'package:voxylive/screens/home/dashboard.dart';
 import '../../services/auth_service.dart';
 import '../../utils/loader.dart';
 import 'package:flutter/services.dart';
+import '../../utils/storage.dart';
 import 'dob_screen.dart';
 import 'dart:async';
 
@@ -69,6 +70,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
       try {
         Loader.show(context);
         await AuthService.verifyOtp(widget.email, otp);
+        await Storage.set("isLoggedIn", true);
+        // await Storage.set("username", widget.email);
         Loader.hide(context);
 
         if (!mounted) return;
@@ -93,9 +96,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) => HomeScreen(
-                initialUsername: widget.email, // ya jo username hai
-              ),
+              builder: (_) => HomeScreen(),
             ),
             (route) => false,
           );

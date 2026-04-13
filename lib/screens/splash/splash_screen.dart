@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:voxylive/screens/home/dashboard.dart';
 import '../auth/get_started_screen.dart';
-import '../../utils/storage.dart'; // 👈 add karo
-import '../home/dashboard.dart'; // 👈 add karo
+import 'package:voxylive/utils/storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,15 +14,28 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    checkLogin(); // ✅ yaha call
+  }
 
-    Future.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
+  // ✅ YEH FUNCTION YAHA LIKHNA HAI
+  Future<void> checkLogin() async {
+    final token = await Storage.getAccessToken(); // ✅ important
 
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    if (token != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const GetStartedScreen()),
       );
-    });
+    }
   }
 
   @override

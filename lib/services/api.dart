@@ -4,9 +4,11 @@ import '../utils/storage.dart';
 
 class Api {
   // static const String baseUrl = "http://116.202.210.102:20355/api";
-  static const String baseUrl = String.fromEnvironment("BASE_URL");
+  // static const String baseUrl = String.fromEnvironment("BASE_URL");
 
   // flutter run --dart-define=BASE_URL=http://116.202.210.102:20355/api
+
+  static const String baseUrl = "http://116.202.210.102:20355/api";
 
   static Future<Map<String, String>> _headers() async {
     final token = await Storage.getAccessToken();
@@ -67,10 +69,15 @@ class Api {
     String method = "GET",
     bool isRetry = false,
   }) async {
+    print("🔵 URL: $url");
+    print("🟡 TOKEN: ${await Storage.getAccessToken()}");
+    print("🟢 STATUS: ${response.statusCode}");
+    print("🔴 BODY: ${response.body}");
     // ✅ HTML response aa raha hai toh token expire hua hai
     if (response.body.trimLeft().startsWith('<')) {
       if (!isRetry && url != null) {
         final refreshed = await _tryRefresh();
+        print("REFRESH TOKEN: $refreshed");
         if (refreshed) {
           return _retryRequest(url, body, method);
         }
@@ -111,6 +118,12 @@ class Api {
         Uri.parse("$baseUrl$url"),
         headers: await _headers(),
       );
+    } else if (method == "PUT") {
+      response = await http.put(
+        Uri.parse("$baseUrl$url"),
+        headers: await _headers(),
+        body: jsonEncode(body),
+      );
     } else {
       response = await http.post(
         Uri.parse("$baseUrl$url"),
@@ -142,7 +155,10 @@ class Api {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await Storage.saveTokens(data["accessToken"], refresh);
+        await Storage.saveTokens(
+          data["accessToken"],
+          data["refreshToken"], 
+        );
         return true;
       }
 

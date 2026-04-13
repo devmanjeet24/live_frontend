@@ -60,7 +60,8 @@ class _FinishSetupScreenState extends State<FinishSetupScreen> {
 
       Loader.hide(context);
 
-      Navigator.pushReplacement(
+      // Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (_) => HomeScreen(
@@ -68,6 +69,7 @@ class _FinishSetupScreenState extends State<FinishSetupScreen> {
             initialAvatar: selectedImage?.path,
           ),
         ),
+        (route) => false,
       );
     } catch (e) {
       Loader.hide(context);
