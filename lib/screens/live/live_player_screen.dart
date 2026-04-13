@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:voxylive/services/coin_service.dart';
+import 'package:voxylive/widgets/gift_panel.dart';
 import '../../services/stream_service.dart';
 import '../../services/socket_service.dart';
 
 class LivePlayerScreen extends StatefulWidget {
   final String room;
   final String username;
+  final String streamerUsername;
 
   const LivePlayerScreen({
     super.key,
     required this.room,
     required this.username,
+    required this.streamerUsername
   });
 
   @override
@@ -26,6 +30,10 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   int likes = 0;
   int dislikes = 0;
   bool isStreamer = false;
+
+  int coinBalance = 0;
+  String streamerUsername = ""; // streamer ka username
+  List<Map> giftAnimations = []; // screen pe flying gifts
   final TextEditingController controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -47,11 +55,24 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   Future<void> init() async {
     try {
       final res = await StreamService.getToken(widget.room);
+      streamerUsername = widget.streamerUsername;
+      final coinRes = await CoinService.getBalance();
+      setState(() => coinBalance = coinRes);
       isStreamer = res["isStreamer"] == true;
       print("IS STREAMER: $isStreamer");
 
       print("✅ TOKEN RES: $res");
       SocketService.connect();
+      // gift receive karo
+      SocketService.socket?.on("receive-gift", (data) {
+        setState(() {
+          giftAnimations.add(data);
+        });
+        // 3 second baad remove karo
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) setState(() => giftAnimations.removeAt(0));
+        });
+      });
       SocketService.joinRoomAfterConnect({
         "roomId": widget.room,
         "username": widget.username,
@@ -372,6 +393,70 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                       ],
                     ),
                   ),
+
+                if (!isStreamer)
+                  Positioned(
+                    right: 14,
+                    bottom: 60,
+                    child: GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => GiftPanel(
+                            roomId: widget.room,
+                            streamerUsername: streamerUsername,
+                            coinBalance: coinBalance,
+                            onGiftSent: (newBalance) {
+                              setState(() => coinBalance = newBalance);
+                            },
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.45),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.15),
+                          ),
+                        ),
+                        child: const Text(
+                          "🎁",
+                          style: TextStyle(fontSize: 22),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Stack ke andar add karo
+                ...giftAnimations.map(
+                  (g) => Positioned(
+                    bottom: 300,
+                    left: 20,
+                    child: TweenAnimationBuilder(
+                      tween: Tween<double>(begin: 0, end: 1),
+                      duration: const Duration(seconds: 2),
+                      builder: (_, double v, __) => Opacity(
+                        opacity: v > 0.8 ? (1 - v) * 5 : 1,
+                        child: Transform.translate(
+                          offset: Offset(0, -100 * v),
+                          child: Text(
+                            "${g['emoji']} ${g['senderName']} sent ${g['giftName']}!",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
                 /// 💬 BOTTOM — Chat + Input
                 Positioned(

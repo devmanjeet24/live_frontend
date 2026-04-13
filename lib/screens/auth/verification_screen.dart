@@ -33,18 +33,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
   final List<FocusNode> focusNodes = List.generate(4, (_) => FocusNode());
 
   Future<void> _checkClipboard() async {
-  final data = await Clipboard.getData(Clipboard.kTextPlain);
-  final text = data?.text?.trim() ?? "";
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? "";
 
-  if (text.length == 4 && RegExp(r'^\d{4}$').hasMatch(text)) {
-    for (int i = 0; i < 4; i++) {
-      controllers[i].text = text[i];
+    if (text.length == 4 && RegExp(r'^\d{4}$').hasMatch(text)) {
+      for (int i = 0; i < 4; i++) {
+        controllers[i].text = text[i];
+      }
+      FocusScope.of(context).unfocus();
+      _onOtpComplete();
     }
-    FocusScope.of(context).unfocus();
-    _onOtpComplete();
   }
-}
-
 
   void startTimer() {
     seconds = 30;
@@ -76,14 +75,29 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
         // ✅ isNewUser ke basis pe route
         if (widget.isNewUser) {
-          Navigator.pushReplacement(
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (_) => const DobScreen()),
+          // );
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const DobScreen()),
+            (route) => false,
           );
         } else {
-          Navigator.pushReplacement(
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (_) => const HomeScreen()),
+          // );
+
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(
+              builder: (_) => HomeScreen(
+                initialUsername: widget.email, // ya jo username hai
+              ),
+            ),
+            (route) => false,
           );
         }
       } catch (e) {
@@ -326,19 +340,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 
-@override
-void dispose() {
-  
-  timer?.cancel();
+  @override
+  void dispose() {
+    timer?.cancel();
 
-  for (var c in controllers) {
-    c.dispose();
+    for (var c in controllers) {
+      c.dispose();
+    }
+
+    for (var f in focusNodes) {
+      f.dispose();
+    }
+
+    super.dispose();
   }
-
-  for (var f in focusNodes) {
-    f.dispose();
-  }
-
-  super.dispose();
-}
 }

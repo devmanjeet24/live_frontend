@@ -81,6 +81,7 @@ class _LiveTabState extends State<LiveTab> {
                           builder: (_) => LivePlayerScreen(
                             room: s["roomId"],
                             username: widget.username,
+                            streamerUsername: s["username"],
                           ),
                         ),
                       );
