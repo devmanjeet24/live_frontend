@@ -19,17 +19,21 @@ class _LiveTabState extends State<LiveTab> {
   void initState() {
     super.initState();
 
-    print("🟡 LiveTab init");
-
     SocketService.connect();
 
     SocketService.listenLiveStreamers((data) {
-      print("🔥 LIVE STREAMERS DATA: $data");
-      setState(() {
-        streamers = data;
-      });
+      if (mounted) setState(() => streamers = data);
     });
 
+    // ✅ streamer-offline listener
+    SocketService.socket?.on("streamer-offline", (data) {
+      if (mounted)
+        setState(() {
+          streamers.removeWhere((s) => s["roomId"] == data["roomId"]);
+        });
+    });
+
+    // ✅ Connected check
     if (SocketService.socket != null && SocketService.socket!.connected) {
       SocketService.socket!.emit("get-live-streamers");
     } else {
@@ -86,12 +90,13 @@ class _LiveTabState extends State<LiveTab> {
                         ),
                       );
                     },
+
                     /// StreamerCard wala original design
                     child: StreamerCard(
                       // imagePath: "assets/images/streamer${(index % 6) + 1}.png",
                       streamerName: s["username"] ?? "Unknown",
                       viewers: s["viewers"]?.toString() ?? "0",
-                      avatarUrl: s["avatar"] ?? "", 
+                      avatarUrl: s["avatar"] ?? "",
                     ),
                   );
                 },

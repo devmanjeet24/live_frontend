@@ -17,6 +17,11 @@ class UserService {
     return await Api.get("/user/profile");
   }
 
+  static Future<List> getAllStreamers() async {
+  final res = await Api.get("/user/streamers");
+  return res["streamers"] ?? [];
+}
+
   static Future<void> requestStreamer() async {
   await Api.post("/user/request-streamer", {});
  }

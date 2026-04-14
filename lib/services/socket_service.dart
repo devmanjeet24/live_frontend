@@ -120,13 +120,15 @@ class SocketService {
     socket?.emit("send-reaction", {"roomId": roomId, "type": type});
   }
 
-  static void listenReaction(Function(dynamic) cb) {
-    socket?.on("receive-reaction", cb);
+  // listen
+  static void listenReaction(Function(dynamic) callback) {
+    socket?.off("receive-reaction"); 
+    socket?.on("receive-reaction", (data) => callback(data));
   }
 
   /// 🎥 LIVE STREAMERS LIST
   static void listenLiveStreamers(Function(dynamic) cb) {
-    socket?.off("live-streamers"); // 🔥 important
+    socket?.off("live-streamers"); 
     socket?.on("live-streamers", cb);
   }
 

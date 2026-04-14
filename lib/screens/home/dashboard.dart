@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> get screens => [
     LiveTab(username: username),
-    const DiscoverTab(),
+    DiscoverTab(username: username),
     const ChatTab(),
     const MyHubTab(),
   ];

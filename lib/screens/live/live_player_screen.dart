@@ -31,6 +31,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   int likes = 0;
   int dislikes = 0;
   bool isStreamer = false;
+  bool isCameraOff = false;
 
   int coinBalance = 0;
   String streamerUsername = ""; // streamer ka username
@@ -108,11 +109,10 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
         setState(() => viewers = count);
       });
       SocketService.listenReaction((data) {
-        if (data["type"] == "like") {
-          setState(() => likes++);
-        } else {
-          setState(() => dislikes++);
-        }
+        setState(() {
+          likes = data["likes"] ?? likes;
+          dislikes = data["dislikes"] ?? dislikes;
+        });
       });
       final url = "wss://voxylive-narna5pf.livekit.cloud";
       final token = res["token"] ?? "";
@@ -333,16 +333,36 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                   Positioned(
                     right: 14,
                     bottom: 120,
-                    child: _circleBtn(
-                      icon: isMuted ? Icons.mic_off : Icons.mic,
-                      color: isMuted ? Colors.red : Colors.white,
-                      onTap: () async {
-                        isMuted = !isMuted;
-                        await room!.localParticipant?.setMicrophoneEnabled(
-                          !isMuted,
-                        );
-                        setState(() {});
-                      },
+                    child: Column(
+                      children: [
+                        // MIC (existing)
+                        _circleBtn(
+                          icon: isMuted ? Icons.mic_off : Icons.mic,
+                          color: isMuted ? Colors.red : Colors.white,
+                          onTap: () async {
+                            isMuted = !isMuted;
+                            await room!.localParticipant?.setMicrophoneEnabled(
+                              !isMuted,
+                            );
+                            setState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        // CAMERA (naya)
+                        _circleBtn(
+                          icon: isCameraOff
+                              ? Icons.videocam_off
+                              : Icons.videocam,
+                          color: isCameraOff ? Colors.red : Colors.white,
+                          onTap: () async {
+                            isCameraOff = !isCameraOff;
+                            await room!.localParticipant?.setCameraEnabled(
+                              !isCameraOff,
+                            );
+                            setState(() {});
+                          },
+                        ),
+                      ],
                     ),
                   ),
 

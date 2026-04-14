@@ -5,7 +5,7 @@ import '../../utils/storage.dart';
 import '../auth/get_started_screen.dart';
 import '../auth/edit_profile.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final String username;
   final String? avatar;
   final String role;
@@ -17,6 +17,12 @@ class ProfileScreen extends StatelessWidget {
     this.role = "user",
   });
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool requestSent = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,9 +54,9 @@ class ProfileScreen extends StatelessWidget {
               radius: 60,
               backgroundColor: const Color(0xFF1A1B18),
               child: ClipOval(
-                child: avatar != null
+                child: widget.avatar != null
                     ? Image.network(
-                        avatar!,
+                        widget.avatar!,
                         width: 120,
                         height: 120,
                         fit: BoxFit.cover,
@@ -76,7 +82,7 @@ class ProfileScreen extends StatelessWidget {
 
             /// USERNAME
             Text(
-              username,
+              widget.username,
               style: const TextStyle(
                 fontFamily: "MuseoModerno",
                 color: Colors.white,
@@ -84,6 +90,24 @@ class ProfileScreen extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+
+            if (widget.role == "streamer")
+              Container(
+                margin: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.red, width: 1),
+                ),
+                child: const Text(
+                  "🔴 Streamer",
+                  style: TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ),
 
             const SizedBox(height: 60),
 
@@ -121,7 +145,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Go Live Button
-            if (role == "streamer")
+            if (widget.role == "streamer")
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -136,7 +160,8 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => StartStreamScreen(username: username),
+                        builder: (_) =>
+                            StartStreamScreen(username: widget.username),
                       ),
                     );
                   },
@@ -150,44 +175,51 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-            /// 🔥 BECOME STREAMER
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE98834),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+            /// 🔥 BECOME STREAMER — sirf tab dikhao jab streamer nahi hai
+            if (widget.role != "streamer")
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: requestSent
+                        ? const Color(0xFF3A2713)
+                        : const Color(0xFFE98834),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: requestSent
+                      ? null
+                      : () async {
+                          try {
+                            setState(() => requestSent = true);
+                            await UserService.requestStreamer();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Request sent! Pending admin approval",
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            setState(() => requestSent = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        },
+                  child: Text(
+                    requestSent ? "⏳ Request Pending..." : "Become a Streamer",
+                    style: TextStyle(
+                      color: requestSent ? Colors.white38 : Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                onPressed: () async {
-                  try {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Sending request...")),
-                    );
-
-                    await UserService.requestStreamer();
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Request sent successfully"),
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
-                  }
-                },
-                child: const Text(
-                  "Become a Streamer",
-                  style: TextStyle(color: Colors.black),
-                ),
               ),
-            ),
 
             const SizedBox(height: 60),
 
