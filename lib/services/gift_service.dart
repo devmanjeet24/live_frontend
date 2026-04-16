@@ -13,4 +13,9 @@ class GiftService {
     });
     return res["newBalance"] ?? 0;
   }
+
+  static Future<List> getGiftConfigs() async {
+    final res = await Api.get("/gifts/configs");
+    return res["gifts"] ?? [];
+  }
 }

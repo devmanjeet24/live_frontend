@@ -1,11 +1,11 @@
 import 'api.dart';
 
 class AdminService {
-  static Future<String> login(String email) async {
+  static Future<String> login(String email, String password) async {
     final res = await Api.post("/admin/login", {
       "email": email,
+      "password": password,
     });
-
     return res["accessToken"];
   }
 

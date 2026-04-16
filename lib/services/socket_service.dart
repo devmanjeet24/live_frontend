@@ -67,10 +67,10 @@ class SocketService {
     }
   }
 
-  /// 🚪 LEAVE ROOM
-  static void leaveRoom(String roomId) {
-    socket?.emit("leave-room", roomId);
-    print("⬅️ Left room: $roomId");
+  static void leaveRoom(String roomId, String username) {
+    socket?.emit("leave-room", {"roomId": roomId, "username": username});
+
+    print("⬅️ Left room: $roomId as $username");
   }
 
   /// 💬 SEND MESSAGE
@@ -122,13 +122,13 @@ class SocketService {
 
   // listen
   static void listenReaction(Function(dynamic) callback) {
-    socket?.off("receive-reaction"); 
+    socket?.off("receive-reaction");
     socket?.on("receive-reaction", (data) => callback(data));
   }
 
   /// 🎥 LIVE STREAMERS LIST
   static void listenLiveStreamers(Function(dynamic) cb) {
-    socket?.off("live-streamers"); 
+    socket?.off("live-streamers");
     socket?.on("live-streamers", cb);
   }
 

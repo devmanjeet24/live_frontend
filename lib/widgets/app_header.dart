@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:voxylive/screens/profile/profile_screen.dart'; // 👈 add karo
+import 'package:voxylive/screens/coins/wallet_screen.dart';
+import 'package:voxylive/screens/profile/profile_screen.dart';
 
 class AppHeader extends StatelessWidget {
   final String username;
   final String? avatar;
   final String role;
+  final int coinBalance;
+  final VoidCallback? onWalletTap;
 
+  final VoidCallback? onWalletReturn;
 
   const AppHeader({
-    super.key, 
-    required this.username, 
+    super.key,
+    required this.username,
     this.avatar,
     required this.role,
-    });
+    required this.coinBalance,
+    this.onWalletReturn,
+    this.onWalletTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,21 +29,17 @@ class AppHeader extends StatelessWidget {
         Flexible(
           child: Row(
             children: [
-              // 👇 GestureDetector wrap karo
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ProfileScreen(
-                            username: username, 
-                            avatar: avatar,
-                            role: role,
-                            ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileScreen(
+                      username: username,
+                      avatar: avatar,
+                      role: role,
                     ),
-                  );
-                },
+                  ),
+                ),
                 child: CircleAvatar(
                   radius: 28,
                   backgroundColor: const Color(0xFF1A1B18),
@@ -47,14 +50,12 @@ class AppHeader extends StatelessWidget {
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                "assets/images/avattar.png",
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                              );
-                            },
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              "assets/images/avattar.png",
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                            ),
                           )
                         : Image.asset(
                             "assets/images/avattar.png",
@@ -93,31 +94,65 @@ class AppHeader extends StatelessWidget {
           ),
         ),
 
-        /// RIGHT SIDE
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF5A3A1F),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset("assets/images/coin.png", height: 28, width: 28),
-                  const Text("00", style: TextStyle(color: Colors.white)),
-                  const SizedBox(width: 12),
-                  const CircleAvatar(
-                    radius: 12,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.add, size: 16, color: Color(0xFFE98834)),
-                  ),
-                ],
+            /// ✅ Coin click → Wallet (UPDATED)
+            GestureDetector(
+              onTap:
+                  onWalletTap ??
+                  () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WalletScreen()),
+                    );
+
+                    if (result == true) {
+                      onWalletReturn?.call();
+                    }
+                  },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5A3A1F),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      "assets/images/coin.png",
+                      height: 28,
+                      width: 28,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      "$coinBalance",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.add,
+                        size: 16,
+                        color: Color(0xFFE98834),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+
             const SizedBox(width: 8),
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(

@@ -76,12 +76,21 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       SocketService.connect();
       // gift receive karo
       SocketService.socket?.on("receive-gift", (data) {
+        final gift = {
+          ...data,
+          "id": DateTime.now().millisecondsSinceEpoch, // ✅ unique id
+        };
+
         setState(() {
-          giftAnimations.add(data);
+          giftAnimations.add(gift);
         });
-        // 3 second baad remove karo
+
         Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) setState(() => giftAnimations.removeAt(0));
+          if (mounted) {
+            setState(() {
+              giftAnimations.removeWhere((g) => g["id"] == gift["id"]);
+            });
+          }
         });
       });
       SocketService.joinRoomAfterConnect({
@@ -232,7 +241,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                 /// 🎥 VIDEO — full screen
                 Positioned.fill(child: buildVideo()),
 
-                /// 🔴 TOP LEFT — LIVE + viewers
+                ///  — LIVE + viewers
                 Positioned(
                   top: 50,
                   left: 16,
@@ -291,7 +300,6 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                   ),
                 ),
 
-                /// ❌ TOP RIGHT — End button
                 Positioned(
                   top: 46,
                   right: 16,
@@ -373,18 +381,6 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                     bottom: 120,
                     child: Column(
                       children: [
-                        /// MIC
-                        // _circleBtn(
-                        //   icon: isMuted ? Icons.mic_off : Icons.mic,
-                        //   color: isMuted ? Colors.red : Colors.white,
-                        //   onTap: () async {
-                        //     isMuted = !isMuted;
-                        //     await room!.localParticipant?.setMicrophoneEnabled(
-                        //       !isMuted,
-                        //     );
-                        //     setState(() {});
-                        //   },
-                        // ),
                         const SizedBox(height: 16),
 
                         /// LIKE

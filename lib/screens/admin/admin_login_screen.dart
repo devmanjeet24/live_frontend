@@ -12,30 +12,33 @@ class AdminLoginScreen extends StatefulWidget {
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
-  final controller = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool obscure = true;
 
   void login() async {
-    final email = controller.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-    if (email.isEmpty) return;
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email and password required")),
+      );
+      return;
+    }
 
     try {
       Loader.show(context);
-
-      final token = await AdminService.login(email);
-
+      final token = await AdminService.login(email, password); // ✅ password pass
       await Storage.saveTokens(token, "");
-
       Loader.hide(context);
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminDashboard()),
       );
     } catch (e) {
       Loader.hide(context);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -48,28 +51,69 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         child: Column(
           children: [
             const SizedBox(height: 100),
+            const Text("Admin Login",
+              style: TextStyle(color: Colors.white, fontSize: 24)),
+            const SizedBox(height: 30),
 
-            const Text(
-              "Admin Login",
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
-
-            const SizedBox(height: 20),
-
+            // Email
             TextField(
-              controller: controller,
+              controller: emailController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: "Enter admin email",
+              decoration: InputDecoration(
+                hintText: "Admin Email",
+                hintStyle: const TextStyle(color: Colors.grey),
+                filled: true,
+                fillColor: const Color(0xFF1A1B18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            ElevatedButton(
-              onPressed: login,
-              child: const Text("Login"),
-            )
+            // Password
+            TextField(
+              controller: passwordController,
+              obscureText: obscure,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Password",
+                hintStyle: const TextStyle(color: Colors.grey),
+                filled: true,
+                fillColor: const Color(0xFF1A1B18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscure ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () => setState(() => obscure = !obscure),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE98834),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: login,
+                child: const Text("Login",
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+              ),
+            ),
           ],
         ),
       ),
