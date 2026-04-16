@@ -8,4 +8,15 @@ class StreamService {
 
     return res;
   }
+
+    
+  static Future<List> getChatHistory(String roomId) async {
+    try {
+      final res = await Api.get("/stream/chat/$roomId");
+      return res["messages"] ?? [];
+    } catch (_) {
+      return [];
+    }
+  }
+
 }

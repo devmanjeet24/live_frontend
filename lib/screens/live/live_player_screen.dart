@@ -31,6 +31,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   int likes = 0;
   int dislikes = 0;
   bool isStreamer = false;
+  bool hasLiked = false;
+  bool hasDisliked = false;
   bool isCameraOff = false;
 
   int coinBalance = 0;
@@ -400,12 +402,39 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                         const SizedBox(height: 16),
 
                         /// LIKE
-                        _circleBtn(
-                          icon: Icons.thumb_up_rounded,
-                          color: const Color(0xFF4CAF50),
-                          onTap: () =>
-                              SocketService.sendReaction(widget.room, "like"),
+                        GestureDetector(
+                          onTap: () {
+                            if (hasLiked) return;
+                            setState(() {
+                              hasLiked = true;
+                              hasDisliked = false;
+                            });
+                            SocketService.sendReaction(widget.room, "like");
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: hasLiked
+                                  ? const Color(0xFF4CAF50).withOpacity(0.3)
+                                  : Colors.black.withOpacity(0.45),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: hasLiked
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.white.withOpacity(0.15),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.thumb_up_rounded,
+                              color: hasLiked
+                                  ? const Color(0xFF4CAF50)
+                                  : Colors.white54,
+                              size: 22,
+                            ),
+                          ),
                         ),
+
                         Text(
                           "$likes",
                           style: const TextStyle(
@@ -417,14 +446,39 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                         const SizedBox(height: 12),
 
                         /// DISLIKE
-                        _circleBtn(
-                          icon: Icons.thumb_down_rounded,
-                          color: Colors.redAccent,
-                          onTap: () => SocketService.sendReaction(
-                            widget.room,
-                            "dislike",
+                        GestureDetector(
+                          onTap: () {
+                            if (hasDisliked) return;
+                            setState(() {
+                              hasDisliked = true;
+                              hasLiked = false;
+                            });
+                            SocketService.sendReaction(widget.room, "dislike");
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: hasDisliked
+                                  ? Colors.redAccent.withOpacity(0.3)
+                                  : Colors.black.withOpacity(0.45),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: hasDisliked
+                                    ? Colors.redAccent
+                                    : Colors.white.withOpacity(0.15),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.thumb_down_rounded,
+                              color: hasDisliked
+                                  ? Colors.redAccent
+                                  : Colors.white54,
+                              size: 22,
+                            ),
                           ),
                         ),
+
                         Text(
                           "$dislikes",
                           style: const TextStyle(

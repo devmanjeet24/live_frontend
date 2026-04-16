@@ -34,12 +34,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int currentIndex = 0;
 
-  List<Widget> get screens => [
-    LiveTab(username: username),
-    DiscoverTab(username: username),
-    const ChatTab(),
-    const MyHubTab(),
-  ];
+List<Widget> get screens => [
+  LiveTab(username: username),
+  DiscoverTab(username: username),
+  const ChatTab(),
+  MyHubTab(onProfileUpdated: loadProfile), // ✅ callback pass
+];
 
   void initState() {
     super.initState();

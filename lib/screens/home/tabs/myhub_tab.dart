@@ -5,7 +5,8 @@ import 'package:voxylive/services/user_service.dart';
 import 'package:voxylive/services/coin_service.dart';
 
 class MyHubTab extends StatefulWidget {
-  const MyHubTab({super.key});
+  final VoidCallback? onProfileUpdated; // ✅ add karo
+  const MyHubTab({super.key, this.onProfileUpdated});
 
   @override
   State<MyHubTab> createState() => _MyHubTabState();
@@ -41,7 +42,9 @@ class _MyHubTabState extends State<MyHubTab> {
   @override
   Widget build(BuildContext context) {
     return loading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFE98834)))
+        ? const Center(
+            child: CircularProgressIndicator(color: Color(0xFFE98834)),
+          )
         : SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
             child: Column(
@@ -89,7 +92,9 @@ class _MyHubTabState extends State<MyHubTab> {
                       builder: (_) => const FinishSetupScreen(),
                     ),
                   );
-                  loadData(); // wapas aane pe reload
+                  await loadData(); // MyHub refresh
+                  widget.onProfileUpdated
+                      ?.call(); // ✅ HomeScreen ko bhi refresh
                 }),
 
                 // ✅ Transaction History — inline expand
@@ -97,9 +102,8 @@ class _MyHubTabState extends State<MyHubTab> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TransactionHistoryScreen(
-                        transactions: transactions,
-                      ),
+                      builder: (_) =>
+                          TransactionHistoryScreen(transactions: transactions),
                     ),
                   );
                 }),
@@ -126,7 +130,10 @@ class _MyHubTabState extends State<MyHubTab> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                    icon: const Icon(
+                      Icons.admin_panel_settings,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       "Admin Login",
                       style: TextStyle(color: Colors.white, fontSize: 16),
@@ -143,7 +150,11 @@ class _MyHubTabState extends State<MyHubTab> {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: Colors.orange),
       title: Text(title, style: const TextStyle(color: Colors.white)),
-      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        color: Colors.grey,
+        size: 14,
+      ),
       onTap: onTap,
     );
   }
@@ -171,8 +182,11 @@ class TransactionHistoryScreen extends StatelessWidget {
       ),
       body: transactions.isEmpty
           ? const Center(
-              child: Text("No transactions yet",
-                  style: TextStyle(color: Colors.white38)))
+              child: Text(
+                "No transactions yet",
+                style: TextStyle(color: Colors.white38),
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: transactions.length,
