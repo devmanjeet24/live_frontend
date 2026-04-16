@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class Api {
+
+
   // static const String baseUrl = "http://116.202.210.102:20355/api";
-  // static const String baseUrl = String.fromEnvironment("BASE_URL");
-
-  // flutter run --dart-define=BASE_URL=http://116.202.210.102:20355/api
-
-  static const String baseUrl = "http://116.202.210.102:20355/api";
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? '';
 
   static Future<Map<String, String>> _headers() async {
     final token = await Storage.getAccessToken();

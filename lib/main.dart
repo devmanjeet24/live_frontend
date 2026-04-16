@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/splash/splash_screen.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
 
   // ✅ Screen orientation lock (optional but good)
   await SystemChrome.setPreferredOrientations([
@@ -12,8 +15,7 @@ void main() async {
   ]);
 
   // ✅ Stripe init
-  Stripe.publishableKey =
-      "pk_test_51THkYtPu93DI4wH4aLhk8RXQRYK8Fxrtd9Uu9mlIOeRkHLe12raTBAL2tn2XWhHGvt16D4hDgC5eMTDLzmm8ZmkT001WBKGA4F";
+  Stripe.publishableKey = dotenv.env['STRIPE_KEY'] ?? '';
   
   // try {
   //   await Stripe.instance.applySettings();
