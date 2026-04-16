@@ -75,21 +75,37 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       print("✅ TOKEN RES: $res");
       SocketService.connect();
       // gift receive karo
-      SocketService.socket?.on("receive-gift", (data) {
-        final gift = {
-          ...data,
-          "id": DateTime.now().millisecondsSinceEpoch, // ✅ unique id
-        };
+      // SocketService.socket?.on("receive-gift", (data) {
+      //   final gift = {
+      //     ...data,
+      //     "id": DateTime.now().millisecondsSinceEpoch, // ✅ unique id
+      //   };
 
-        setState(() {
-          giftAnimations.add(gift);
-        });
+      //   setState(() {
+      //     giftAnimations.add(gift);
+      //   });
+
+      //   Future.delayed(const Duration(seconds: 3), () {
+      //     if (mounted) {
+      //       setState(() {
+      //         giftAnimations.removeWhere((g) => g["id"] == gift["id"]);
+      //       });
+      //     }
+      //   });
+      // });
+      SocketService.socket?.on("receive-gift", (data) {
+        // ✅ Unique ID add karo taaki sahi gift remove ho
+        final gift = Map<String, dynamic>.from(data);
+        gift["_uid"] = DateTime.now().microsecondsSinceEpoch;
+
+        setState(() => giftAnimations.add(gift));
 
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
-            setState(() {
-              giftAnimations.removeWhere((g) => g["id"] == gift["id"]);
-            });
+            setState(
+              () =>
+                  giftAnimations.removeWhere((g) => g["_uid"] == gift["_uid"]),
+            );
           }
         });
       });
@@ -459,30 +475,59 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                   ),
 
                 // Stack ke andar add karo
-                ...giftAnimations.map(
-                  (g) => Positioned(
-                    bottom: 300,
+                ...giftAnimations.asMap().entries.map((entry) {
+                  final g = entry.value;
+                  return Positioned(
+                    bottom:
+                        280 +
+                        (entry.key * 60.0), // ✅ multiple gifts overlap na ho
                     left: 20,
-                    child: TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(seconds: 2),
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey(g["_uid"]),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(seconds: 3),
                       builder: (_, double v, __) => Opacity(
-                        opacity: v > 0.8 ? (1 - v) * 5 : 1,
+                        opacity: v > 0.7
+                            ? (1.0 - v) / 0.3
+                            : 1.0, // ✅ smooth fade out
                         child: Transform.translate(
-                          offset: Offset(0, -100 * v),
-                          child: Text(
-                            "${g['emoji']} ${g['senderName']} sent ${g['giftName']}!",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          offset: Offset(0, -120 * v), // ✅ upar jaata hai
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFE98834).withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  g['emoji'] ?? "🎁",
+                                  style: const TextStyle(fontSize: 22),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "${g['senderName']} sent ${g['giftName']}!",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
 
                 /// 💬 BOTTOM — Chat + Input
                 Positioned(
