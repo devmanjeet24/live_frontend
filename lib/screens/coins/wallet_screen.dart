@@ -64,18 +64,15 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       setState(() => paying = true);
 
-      // Step 1: Backend se payment intent lo
       final res = await CoinService.createPaymentIntent(
         packageId: packageId,
         customCoins: customCoins,
       );
+      final int coinsToAdd = res["coins"] as int;
 
       final clientSecret = res["clientSecret"] as String;
-      final paymentIntentId = clientSecret.split(
-        "_secret_",
-      )[0]; // pi_xxx extract karo
+      final paymentIntentId = res["paymentIntentId"] as String; // ✅ FIX
 
-      // Step 2: Stripe payment sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -86,7 +83,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
       await Stripe.instance.presentPaymentSheet();
 
-      // Step 3: ✅ Payment success — backend ko confirm karo
       final newBalance = await CoinService.confirmPayment(paymentIntentId);
 
       setState(() {
@@ -94,21 +90,17 @@ class _WalletScreenState extends State<WalletScreen> {
         paying = false;
       });
 
-      // Transaction history reload karo
       await loadData();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              "✅ ${packageId != null || customCoins != null ? res["coins"] : customCoins} coins added!",
-            ),
+            content: Text("✅ Coins added! New balance: $coinBalance"),
             backgroundColor: Colors.green,
           ),
         );
       }
     } on StripeException {
-      // User cancelled — ignore
       if (mounted) setState(() => paying = false);
     } catch (e) {
       if (mounted) {

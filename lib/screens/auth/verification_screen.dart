@@ -38,9 +38,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final text = data?.text?.trim() ?? "";
 
     if (text.length == 4 && RegExp(r'^\d{4}$').hasMatch(text)) {
-      for (int i = 0; i < 4; i++) {
-        controllers[i].text = text[i];
-      }
+      setState(() {
+        for (int i = 0; i < 4; i++) {
+          controllers[i].text = text[i];
+        }
+      });
       FocusScope.of(context).unfocus();
       _onOtpComplete();
     }
@@ -95,9 +97,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (_) => HomeScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => HomeScreen()),
             (route) => false,
           );
         }
@@ -136,6 +136,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
   void initState() {
     super.initState();
     startTimer();
+
+    for (int i = 0; i < 4; i++) {
+      focusNodes[i].addListener(() {
+        if (focusNodes[i].hasFocus) {
+          _checkClipboard();
+        }
+      });
+    }
 
     /// auto focus first box
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -252,27 +260,30 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       border: InputBorder.none,
                     ),
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
                     onTap: () {
-                      // ✅ Clipboard check karo jab box tap ho
-                      _checkClipboard();
+                      controllers[index].clear(); // ✅ NEW
                     },
+
                     onChanged: (value) {
                       if (value.isEmpty) {
                         if (index > 0) {
-                          controllers[index - 1].clear();
                           FocusScope.of(
                             context,
                           ).requestFocus(focusNodes[index - 1]);
                         }
                         return;
                       }
-                      if (index < 3) {
-                        FocusScope.of(
-                          context,
-                        ).requestFocus(focusNodes[index + 1]);
-                      } else {
-                        FocusScope.of(context).unfocus();
-                        _onOtpComplete();
+
+                      if (value.length == 1) {
+                        if (index < 3) {
+                          FocusScope.of(
+                            context,
+                          ).requestFocus(focusNodes[index + 1]);
+                        } else {
+                          FocusScope.of(context).unfocus();
+                          _onOtpComplete();
+                        }
                       }
                     },
                   ),

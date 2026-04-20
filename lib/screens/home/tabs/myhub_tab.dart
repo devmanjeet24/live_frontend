@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voxylive/screens/admin/admin_login_screen.dart';
 import 'package:voxylive/screens/auth/edit_profile.dart';
+import 'package:voxylive/screens/profile/profile_screen.dart';
 import 'package:voxylive/services/user_service.dart';
 import 'package:voxylive/services/coin_service.dart';
 
@@ -86,15 +87,21 @@ class _MyHubTabState extends State<MyHubTab> {
 
                 // ✅ Edit Profile — FinishSetupScreen pe jaata hai
                 _menuItem(Icons.person_outline, "Edit Profile", () async {
-                  await Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const FinishSetupScreen(),
+                      builder: (_) => ProfileScreen(
+                        username: username,
+                        avatar: avatar,
+                        role: "user",
+                      ),
                     ),
                   );
-                  await loadData(); // MyHub refresh
-                  widget.onProfileUpdated
-                      ?.call(); // ✅ HomeScreen ko bhi refresh
+
+                  if (result == true) {
+                    await loadData(); // 🔄 MyHub refresh
+                    widget.onProfileUpdated?.call(); // 🔄 Dashboard refresh
+                  }
                 }),
 
                 // ✅ Transaction History — inline expand

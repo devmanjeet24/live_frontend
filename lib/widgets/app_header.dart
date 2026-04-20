@@ -30,16 +30,22 @@ class AppHeader extends StatelessWidget {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProfileScreen(
-                      username: username,
-                      avatar: avatar,
-                      role: role,
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfileScreen(
+                        username: username,
+                        avatar: avatar,
+                        role: role,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+
+                  if (result == true && onWalletReturn != null) {
+                    onWalletReturn!();
+                  }
+                },
                 child: CircleAvatar(
                   radius: 28,
                   backgroundColor: const Color(0xFF1A1B18),

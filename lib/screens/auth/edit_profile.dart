@@ -15,12 +15,35 @@ class FinishSetupScreen extends StatefulWidget {
 }
 
 class _FinishSetupScreenState extends State<FinishSetupScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentProfile();
+  }
+
   final TextEditingController usernameController = TextEditingController();
+  String? _existingAvatarUrl;
 
   File? selectedImage;
   bool isLoading = false;
 
   final ImagePicker picker = ImagePicker();
+
+  Future<void> _loadCurrentProfile() async {
+    try {
+      final res = await UserService.getProfile();
+      final user = res["user"];
+
+      if (!mounted) return;
+
+      setState(() {
+        usernameController.text = user["username"] ?? "";
+        _existingAvatarUrl = user["avatar"];
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
 
   Future<void> pickImage(ImageSource source) async {
     try {
@@ -39,48 +62,42 @@ class _FinishSetupScreenState extends State<FinishSetupScreen> {
   }
 
   Future<void> submitProfile() async {
-    final username = usernameController.text.trim();
+  final username = usernameController.text.trim();
 
-    if (username.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Enter username")));
-      return;
-    }
-
-    try {
-      setState(() => isLoading = true);
-
-      Loader.show(context);
-
-      await UserService.updateProfile(
-        username: username,
-        imagePath: selectedImage?.path,
-      );
-
-      Loader.hide(context);
-
-      // Navigator.pushReplacement(
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(
-            initialUsername: username, 
-            initialAvatar: selectedImage?.path,
-          ),
-        ),
-        (route) => false,
-      );
-    } catch (e) {
-      Loader.hide(context);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    } finally {
-      setState(() => isLoading = false);
-    }
+  if (username.isEmpty) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Enter username")));
+    return;
   }
+
+  try {
+    setState(() => isLoading = true);
+
+    Loader.show(context);
+
+    await UserService.updateProfile(
+      username: username,
+      imagePath: selectedImage?.path,
+    );
+
+    Loader.hide(context);
+
+    
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen()),
+      (route) => false,
+    );
+
+  } catch (e) {
+    Loader.hide(context);
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(e.toString())));
+  } finally {
+    setState(() => isLoading = false);
+  }
+}
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,8 +171,12 @@ class _FinishSetupScreenState extends State<FinishSetupScreen> {
                   CircleAvatar(
                     radius: 28,
                     backgroundImage: selectedImage != null
-                        ? FileImage(selectedImage!)
-                        : const AssetImage("assets/images/avattar.png")
+                        ? FileImage(selectedImage!) as ImageProvider
+                        : (_existingAvatarUrl != null
+                                  ? NetworkImage(_existingAvatarUrl!)
+                                  : const AssetImage(
+                                      "assets/images/avattar.png",
+                                    ))
                               as ImageProvider,
                   ),
 

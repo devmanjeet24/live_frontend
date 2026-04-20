@@ -189,7 +189,7 @@ class _BuyCoinsScreenState extends State<BuyCoinsScreen> {
                       );
                     },
                     child: const Text(
-                      "🧪 Add 500 Test Coins",
+                      "Add 500 Test Coins",
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

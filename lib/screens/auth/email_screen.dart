@@ -12,6 +12,7 @@ class EmailScreen extends StatefulWidget {
 
 class _EmailScreenState extends State<EmailScreen> {
   final TextEditingController emailController = TextEditingController();
+  bool isValidEmail = false;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +67,11 @@ class _EmailScreenState extends State<EmailScreen> {
             /// Input (no controller)
             TextField(
               controller: emailController,
+              onChanged: (value) {
+                setState(() {
+                  isValidEmail = value.contains("@") && value.contains(".");
+                });
+              },
               keyboardType: TextInputType.emailAddress,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
@@ -92,46 +98,61 @@ class _EmailScreenState extends State<EmailScreen> {
               height: 55,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE98834),
+                  backgroundColor: isValidEmail
+                      ? const Color(0xFFE98834)
+                      : Colors.grey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () async {
-                  final email = emailController.text.trim();
+                onPressed: isValidEmail
+                    ? () async {
+                        final email = emailController.text.trim();
 
-                  if (email.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Enter email")),
-                    );
-                    return;
-                  }
+                        if (email.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter your email"),
+                            ),
+                          );
+                          return;
+                        }
 
-                  try {
-                    Loader.show(context);
+                        if (!email.contains("@") || !email.contains(".")) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please enter a valid email"),
+                            ),
+                          );
+                          return;
+                        }
 
-                    final isNewUser = await AuthService.emailAuth(
-                      email,
-                    ); // 👈 bool lo
+                        try {
+                          Loader.show(context);
 
-                    Loader.hide(context);
+                          final isNewUser = await AuthService.emailAuth(
+                            email,
+                          ); // 👈 bool lo
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => VerificationScreen(
-                          email: email,
-                          isNewUser: isNewUser, // 👈 pass karo
-                        ),
-                      ),
-                    );
-                  } catch (e) {
-                    Loader.hide(context);
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
-                  }
-                },
+                          Loader.hide(context);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => VerificationScreen(
+                                email: email,
+                                isNewUser: isNewUser, // 👈 pass karo
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          Loader.hide(context);
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
+                      }
+                    : null,
                 child: const Text(
                   "Continue",
                   style: TextStyle(

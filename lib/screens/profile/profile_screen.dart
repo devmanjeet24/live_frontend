@@ -24,6 +24,20 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool requestSent = false;
   @override
+  void initState() {
+    super.initState();
+    _checkPendingRequest();
+  }
+
+  Future<void> _checkPendingRequest() async {
+    try {
+      final pending = await Storage.get("streamer_requested");
+      if (pending == "true") {
+        setState(() => requestSent = true);
+      }
+    } catch (_) {}
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0E0F0B),
@@ -122,13 +136,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const FinishSetupScreen(),
                     ),
                   );
+
+                  // ✅ Agar update hua
+                  if (result == true && context.mounted) {
+                    Navigator.pop(context, true);
+                  }
                 },
                 child: const Text(
                   "Edit Profile",
@@ -195,8 +214,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? null
                       : () async {
                           try {
-                            setState(() => requestSent = true);
                             await UserService.requestStreamer();
+
+                            // ✅ save in storage
+                            await Storage.set("streamer_requested", "true");
+
+                            setState(() => requestSent = true);
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(

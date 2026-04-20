@@ -105,6 +105,7 @@ List<Widget> get screens => [
                         final newBalance = await CoinService.getBalance();
                         if (mounted) setState(() => coinBalance = newBalance);
                       },
+                      onWalletReturn: loadProfile,
                     ),
             ),
 
