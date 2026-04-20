@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "393696498788",
+    "project_id": "voxyliv-new1",
+    "storage_bucket": "voxyliv-new1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:393696498788:android:54386652116778ace7fb71",
+        "android_client_info": {
+          "package_name": "com.example.voxylive"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "393696498788-s63pvhtle6itk8pur0kq5bbfbdsqtuua.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.voxylive",
+            "certificate_hash": "dddd6807eb57b89f209361ace99d188401496d10"
+          }
+        },
+        {
+          "client_id": "393696498788-41o437evh8iggi8rk8boshbqn0vt78h3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEluKdpJ4pPHO3vBfdC_TAMogO3CzaH_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "393696498788-41o437evh8iggi8rk8boshbqn0vt78h3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
